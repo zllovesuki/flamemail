@@ -1,0 +1,47 @@
+{
+  "name": "flamemail",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "generate-types": "wrangler types --env-file .dev.vars.example",
+    "check": "npm run generate-types && tsc --noEmit",
+    "preview": "vite preview",
+    "cf:typegen": "npm run generate-types",
+    "admin:password": "node ./scripts/generate-admin-password.mjs",
+    "email:local": "node ./scripts/send-local-email.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply flamemail-db --remote",
+    "db:migrate:local": "wrangler d1 migrations apply flamemail-db --local",
+    "db:push": "drizzle-kit push",
+    "db:local:migrate": "npm run db:migrate:local",
+    "db:local:init": "npm run db:migrate:local",
+    "db:local:reset": "node ./scripts/reset-local-d1.mjs && npm run db:migrate:local"
+  },
+  "dependencies": {
+    "@cloudflare/util-en-garde": "^8.0.13",
+    "@tailwindcss/vite": "^4.2.1",
+    "drizzle-orm": "latest",
+    "hono": "latest",
+    "lucide-react": "^0.577.0",
+    "nanoid": "latest",
+    "postal-mime": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "latest",
+    "tailwindcss": "^4.2.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.28.0",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "^5.2.0",
+    "drizzle-kit": "latest",
+    "typescript": "latest",
+    "vite": "^7.3.1",
+    "wrangler": "latest"
+  }
+}

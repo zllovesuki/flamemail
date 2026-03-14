@@ -1,0 +1,66 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "flamemail",
+  "main": "src/worker/index.ts",
+  "workers_dev": false,
+  "compatibility_date": "2026-03-13",
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/ws"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "flamemail-db",
+      "database_id": "0bf20b21-ff79-4c7e-8bc3-7c59cb854a63",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE",
+      "bucket_name": "flamemail-emails"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "SESSIONS",
+      "id": "2351c44987c54f7b9c7fa0926cbfb10a"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "INBOX_WS",
+        "class_name": "InboxWebSocket"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "InboxWebSocket"
+      ]
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "0 * * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "pattern": "flamemail.devbin.tools",
+      "custom_domain": true
+    }
+  ]
+}
