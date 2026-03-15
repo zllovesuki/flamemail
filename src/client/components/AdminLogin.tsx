@@ -15,11 +15,9 @@ import {
   isTurnstileError,
   listAdminDomains,
   listAdminInboxes,
-  listAdminTempInboxes,
   setAdminToken,
   type AdminDomain,
   type AdminInbox,
-  type AdminTempInbox,
 } from "@/client/lib/api";
 
 export function AdminLogin() {
@@ -34,10 +32,6 @@ export function AdminLogin() {
   }, []);
   const [domains, setDomains] = useState<AdminDomain[]>([]);
   const [inboxes, setInboxes] = useState<AdminInbox[]>([]);
-  const [tempInboxes, setTempInboxes] = useState<AdminTempInbox[]>([]);
-  const [tempInboxPage, setTempInboxPage] = useState(0);
-  const [tempInboxTotal, setTempInboxTotal] = useState(0);
-  const [tempInboxPageSize, setTempInboxPageSize] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,10 +40,6 @@ export function AdminLogin() {
     setToken(null);
     setDomains([]);
     setInboxes([]);
-    setTempInboxes([]);
-    setTempInboxPage(0);
-    setTempInboxTotal(0);
-    setTempInboxPageSize(20);
     setError(null);
 
     if (message) {
@@ -57,23 +47,18 @@ export function AdminLogin() {
     }
   }, []);
 
-  const reload = useCallback(async (currentToken: string, page = tempInboxPage) => {
+  const reload = useCallback(async (currentToken: string) => {
     const nextDomains = await listAdminDomains(currentToken);
     const nextInboxes = await listAdminInboxes(currentToken);
-    const tempInboxResults = await listAdminTempInboxes(currentToken, page);
 
     setDomains(nextDomains);
     setInboxes(nextInboxes);
-    setTempInboxes(tempInboxResults.inboxes);
-    setTempInboxTotal(tempInboxResults.total);
-    setTempInboxPageSize(tempInboxResults.pageSize);
-  }, [tempInboxPage]);
+  }, []);
 
   useEffect(() => {
     if (!token) {
       setDomains([]);
       setInboxes([]);
-      setTempInboxes([]);
       return;
     }
 
@@ -84,7 +69,7 @@ export function AdminLogin() {
       setError(null);
 
       try {
-        await reload(token, tempInboxPage);
+        await reload(token);
       } catch (nextError) {
         if (!active) {
           return;
@@ -108,7 +93,7 @@ export function AdminLogin() {
     return () => {
       active = false;
     };
-  }, [reload, resetAdminState, tempInboxPage, token]);
+  }, [reload, resetAdminState, token]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -122,7 +107,6 @@ export function AdminLogin() {
 
     try {
       const response = await adminLogin(password, turnstileToken);
-      setTempInboxPage(0);
       setAdminToken(response.token);
       setToken(response.token);
       setPassword("");
@@ -153,15 +137,6 @@ export function AdminLogin() {
     if (token) {
       await reload(token);
     }
-  };
-
-  const handleTempInboxPageChange = (nextPage: number) => {
-    const totalPages = Math.max(1, Math.ceil(tempInboxTotal / tempInboxPageSize));
-    if (nextPage < 0 || nextPage >= totalPages || nextPage === tempInboxPage) {
-      return;
-    }
-
-    setTempInboxPage(nextPage);
   };
 
   return (
@@ -246,7 +221,7 @@ export function AdminLogin() {
       )}
 
       {token ? (
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
           <div className="space-y-6">
             <DomainManager
               token={token}
@@ -256,12 +231,8 @@ export function AdminLogin() {
               onReload={handleReload}
             />
             <TempInboxList
-              inboxes={tempInboxes}
-              total={tempInboxTotal}
-              page={tempInboxPage}
-              pageSize={tempInboxPageSize}
-              loading={loading}
-              onPageChange={handleTempInboxPageChange}
+              token={token}
+              onSessionError={resetAdminState}
             />
           </div>
           <PermanentInboxList inboxes={inboxes} loading={loading} />

@@ -361,8 +361,10 @@ export async function listAdminDomains(token: string) {
   return response.domains;
 }
 
-export async function listAdminTempInboxes(token: string, page = 0) {
-  return request(`/api/admin/temp-inboxes?page=${page}`, AdminTempInboxPage, {
+export async function listAdminTempInboxes(token: string, page = 0, hasEmails = false) {
+  const params = new URLSearchParams({ page: String(page) });
+  if (hasEmails) params.set("hasEmails", "true");
+  return request(`/api/admin/temp-inboxes?${params}`, AdminTempInboxPage, {
     token,
     bookmarkScope: ADMIN_BOOKMARK_SCOPE,
   });

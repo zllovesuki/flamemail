@@ -1,6 +1,6 @@
-import { and, asc, count, desc, eq, gt, inArray, lt } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, gt, inArray, lt, sql } from "drizzle-orm";
 import { customAlphabet, nanoid } from "nanoid";
-import { TEMP_MAILBOX_TTL_HOURS, type SessionRecord, type TempMailboxTtlHours } from "@/shared/contracts";
+import { ADMIN_TEMP_INBOX_PAGE_SIZE, TEMP_MAILBOX_TTL_HOURS, type SessionRecord, type TempMailboxTtlHours } from "@/shared/contracts";
 import { createDb, type Database } from "@/worker/db";
 import { domains, emails, inboxes } from "@/worker/db/schema";
 import { createLogger } from "@/worker/logger";
@@ -12,7 +12,6 @@ const createLocalPart = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 1
 const logger = createLogger("inbox-service");
 
 export const ADMIN_SESSION_TTL_MS = 60 * 60 * 1000;
-export const ADMIN_TEMP_INBOX_PAGE_SIZE = 20;
 export const WEBSOCKET_TICKET_TTL_MS = 60 * 1000;
 export const EXPIRED_INBOX_CLEANUP_BATCH_SIZE = 100;
 export const RESERVED_ADDRESSES = ["admin", "postmaster", "abuse", "webmaster"] as const;
@@ -310,14 +309,23 @@ export async function listActiveTemporaryInboxesForAdmin(
   page: number,
   pageSize = ADMIN_TEMP_INBOX_PAGE_SIZE,
   db?: Database,
+  hasEmails?: boolean,
 ) {
   const database = db ?? createDb(env.DB);
   const currentPage = Number.isFinite(page) && page >= 0 ? page : 0;
   const now = new Date();
 
+  const whereCondition = and(
+    eq(inboxes.isPermanent, false),
+    gt(inboxes.expiresAt, now),
+    hasEmails
+      ? exists(database.select({ n: sql`1` }).from(emails).where(eq(emails.inboxId, inboxes.id)))
+      : undefined,
+  );
+
   const [items, totalRows] = await Promise.all([
     database.query.inboxes.findMany({
-      where: and(eq(inboxes.isPermanent, false), gt(inboxes.expiresAt, now)),
+      where: whereCondition,
       orderBy: [desc(inboxes.createdAt)],
       limit: pageSize,
       offset: currentPage * pageSize,
@@ -325,7 +333,7 @@ export async function listActiveTemporaryInboxesForAdmin(
     database
       .select({ total: count() })
       .from(inboxes)
-      .where(and(eq(inboxes.isPermanent, false), gt(inboxes.expiresAt, now))),
+      .where(whereCondition),
   ]);
 
   const emailCounts = items.length

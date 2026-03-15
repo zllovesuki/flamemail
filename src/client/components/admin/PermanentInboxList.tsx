@@ -37,8 +37,8 @@ export function PermanentInboxList({ inboxes, loading }: PermanentInboxListProps
               <strong className="text-sm font-semibold text-zinc-200 group-hover:text-flame-400">
                 {inbox.localPart}
               </strong>
-              <span className="rounded-full bg-zinc-700/60 px-2 py-0.5 text-xs tabular-nums text-zinc-400">
-                {inbox.emailCount}
+              <span className="rounded-full bg-zinc-700/60 px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-300">
+                {inbox.emailCount} email{inbox.emailCount !== 1 ? "s" : ""}
               </span>
             </span>
             <span className="mt-0.5 block text-xs text-zinc-500">{inbox.domain}</span>

@@ -1,22 +1,74 @@
-import { ChevronLeft, ChevronRight, Clock, Loader2, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Clock, Filter, Loader2, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import type { AdminTempInbox } from "@/client/lib/api";
+import {
+  getErrorMessage,
+  isAdminSessionError,
+  listAdminTempInboxes,
+  type AdminTempInbox,
+} from "@/client/lib/api";
+import { ADMIN_TEMP_INBOX_PAGE_SIZE } from "@/shared/contracts";
 
 interface TempInboxListProps {
-  inboxes: AdminTempInbox[];
-  total: number;
-  page: number;
-  pageSize: number;
-  loading: boolean;
-  onPageChange: (page: number) => void;
+  token: string;
+  onSessionError: (message?: string) => void;
 }
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
 
-export function TempInboxList({ inboxes, total, page, pageSize, loading, onPageChange }: TempInboxListProps) {
+export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
+  const [inboxes, setInboxes] = useState<AdminTempInbox[]>([]);
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(ADMIN_TEMP_INBOX_PAGE_SIZE);
+  const [hasEmails, setHasEmails] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const results = await listAdminTempInboxes(token, page, hasEmails);
+        if (!active) return;
+        setInboxes(results.inboxes);
+        setTotal(results.total);
+        setPageSize(results.pageSize);
+      } catch (fetchError) {
+        if (!active) return;
+
+        if (isAdminSessionError(fetchError)) {
+          onSessionError(getErrorMessage(fetchError));
+          return;
+        }
+
+        setError(getErrorMessage(fetchError));
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    void load();
+    return () => { active = false; };
+  }, [token, page, hasEmails, onSessionError]);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const handlePageChange = (nextPage: number) => {
+    if (nextPage < 0 || nextPage >= totalPages || nextPage === page) return;
+    setPage(nextPage);
+  };
+
+  const handleToggleFilter = () => {
+    setHasEmails((prev) => !prev);
+    setPage(0);
+  };
 
   return (
     <section className="rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-6">
@@ -31,10 +83,30 @@ export function TempInboxList({ inboxes, total, page, pageSize, loading, onPageC
             Browse live temporary inboxes, see how many emails they contain, and inspect them in read-only admin mode.
           </p>
         </div>
-        <span className="shrink-0 whitespace-nowrap rounded-full border border-zinc-800/60 bg-zinc-900 px-3 py-1 text-xs text-zinc-500">
-          {total} active mailbox{total !== 1 ? "es" : ""}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleFilter}
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              hasEmails
+                ? "border-flame-500/30 bg-flame-500/10 text-flame-300"
+                : "border-zinc-800/60 bg-zinc-900 text-zinc-500 hover:border-zinc-700/60 hover:text-zinc-400"
+            }`}
+          >
+            <Filter className="h-3 w-3" />
+            {hasEmails ? "With emails" : "All"}
+          </button>
+          <span className="whitespace-nowrap rounded-full border border-zinc-800/60 bg-zinc-900 px-3 py-1 text-xs text-zinc-500">
+            {total} active mailbox{total !== 1 ? "es" : ""}
+          </span>
+        </div>
       </div>
+
+      {error ? (
+        <p className="mt-5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          {error}
+        </p>
+      ) : null}
 
       {loading ? (
         <p className="mt-5 flex items-center gap-2 text-sm text-zinc-500">
@@ -42,8 +114,12 @@ export function TempInboxList({ inboxes, total, page, pageSize, loading, onPageC
           Loading active temporary inboxes...
         </p>
       ) : null}
-      {!loading && inboxes.length === 0 ? (
-        <p className="mt-5 text-sm text-zinc-500">There are no active temporary inboxes right now.</p>
+      {!loading && !error && inboxes.length === 0 ? (
+        <p className="mt-5 text-sm text-zinc-500">
+          {hasEmails
+            ? "No active temporary inboxes with emails right now."
+            : "There are no active temporary inboxes right now."}
+        </p>
       ) : null}
 
       <div className="mt-5 space-y-3">
@@ -56,7 +132,7 @@ export function TempInboxList({ inboxes, total, page, pageSize, loading, onPageC
                   Created {formatDate(inbox.createdAt)} · Expires {inbox.expiresAt ? formatDate(inbox.expiresAt) : "never"}
                 </p>
                 <p className="mt-1 text-xs text-zinc-600">
-                  {inbox.domain} · {inbox.ttlHours ? `${inbox.ttlHours}h lifetime` : "temporary"} · {inbox.emailCount} email{inbox.emailCount !== 1 ? "s" : ""}
+                  {inbox.domain} · {inbox.ttlHours ? `${inbox.ttlHours}h lifetime` : "temporary"} · <span className="font-medium text-zinc-400">{inbox.emailCount} email{inbox.emailCount !== 1 ? "s" : ""}</span>
                 </p>
               </div>
 
@@ -81,7 +157,7 @@ export function TempInboxList({ inboxes, total, page, pageSize, loading, onPageC
             <button
               type="button"
               disabled={page === 0 || loading}
-              onClick={() => onPageChange(page - 1)}
+              onClick={() => handlePageChange(page - 1)}
               className="flex items-center gap-1 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700/60 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronLeft className="h-3 w-3" />
@@ -90,7 +166,7 @@ export function TempInboxList({ inboxes, total, page, pageSize, loading, onPageC
             <button
               type="button"
               disabled={page >= totalPages - 1 || loading}
-              onClick={() => onPageChange(page + 1)}
+              onClick={() => handlePageChange(page + 1)}
               className="flex items-center gap-1 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700/60 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Next

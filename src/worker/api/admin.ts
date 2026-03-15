@@ -111,7 +111,8 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
 
   app.get("/api/admin/temp-inboxes", requireAdmin, async (c) => {
     const page = Number.parseInt(c.req.query("page") ?? "0", 10);
-    const results = await listActiveTemporaryInboxesForAdmin(c.env, page, undefined, c.get("db"));
+    const hasEmails = c.req.query("hasEmails") === "true";
+    const results = await listActiveTemporaryInboxesForAdmin(c.env, page, undefined, c.get("db"), hasEmails);
 
     return c.json(AdminTempInboxPage.create({
       page: results.page,
