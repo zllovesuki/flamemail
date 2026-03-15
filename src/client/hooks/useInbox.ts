@@ -37,13 +37,16 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
   selectedEmailIdRef.current = selectedEmailId;
   selectedEmailRef.current = selectedEmail;
 
-  const markEmailRead = useCallback((emailId: string) => {
-    if (!markReadOnOpen) {
-      return;
-    }
+  const markEmailRead = useCallback(
+    (emailId: string) => {
+      if (!markReadOnOpen) {
+        return;
+      }
 
-    setEmails((current) => current.map((item) => (item.id === emailId ? { ...item, isRead: true } : item)));
-  }, [markReadOnOpen]);
+      setEmails((current) => current.map((item) => (item.id === emailId ? { ...item, isRead: true } : item)));
+    },
+    [markReadOnOpen],
+  );
 
   const loadEmailDetail = useCallback(
     async (emailId: string) => {
@@ -78,7 +81,10 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
   }, [address, token]);
 
   const refreshEmails = useCallback(
-    async ({ includeTotal = false, refreshSelected = false }: { includeTotal?: boolean; refreshSelected?: boolean } = {}) => {
+    async ({
+      includeTotal = false,
+      refreshSelected = false,
+    }: { includeTotal?: boolean; refreshSelected?: boolean } = {}) => {
       if (!address || !token) {
         setEmails([]);
         setSelectedEmail(null);
@@ -95,7 +101,7 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
       const previousId = selectedEmailIdRef.current;
       const nextSelectedId = emailPage.emails.some((item) => item.id === previousId)
         ? previousId
-        : emailPage.emails[0]?.id ?? null;
+        : (emailPage.emails[0]?.id ?? null);
 
       setSelectedEmailId(nextSelectedId);
 
@@ -104,9 +110,8 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
         return emailPage;
       }
 
-      const shouldRefreshSelected = refreshSelected
-        || nextSelectedId !== previousId
-        || selectedEmailRef.current?.id !== nextSelectedId;
+      const shouldRefreshSelected =
+        refreshSelected || nextSelectedId !== previousId || selectedEmailRef.current?.id !== nextSelectedId;
 
       if (shouldRefreshSelected) {
         await loadEmailDetail(nextSelectedId);

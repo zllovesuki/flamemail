@@ -59,16 +59,22 @@ export function ExternalLinkRedirect() {
           {target ? (
             <>
               <div className="rounded-2xl border border-zinc-800/70 bg-zinc-950/60 p-4">
-                <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Destination</span>
-                <strong className="mt-3 block break-all text-sm font-semibold text-zinc-100 sm:text-base">{target.host}</strong>
-                <p className="mt-2 break-all font-mono text-xs leading-relaxed text-zinc-400 sm:text-sm">{target.toString()}</p>
+                <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                  Destination
+                </span>
+                <strong className="mt-3 block break-all text-sm font-semibold text-zinc-100 sm:text-base">
+                  {target.host}
+                </strong>
+                <p className="mt-2 break-all font-mono text-xs leading-relaxed text-zinc-400 sm:text-sm">
+                  {target.toString()}
+                </p>
               </div>
 
               <div className="flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/8 p-4 text-sm text-amber-100/90">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
                 <p>
-                  Email links can be misleading. Check the destination carefully before continuing, especially if the message asks for passwords,
-                  codes, or payments.
+                  Email links can be misleading. Check the destination carefully before continuing, especially if the
+                  message asks for passwords, codes, or payments.
                 </p>
               </div>
 

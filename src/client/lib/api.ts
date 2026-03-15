@@ -117,7 +117,9 @@ function parseStoredBookmarks() {
     }
 
     return Object.fromEntries(
-      Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].length > 0),
+      Object.entries(parsed).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].length > 0,
+      ),
     );
   } catch {
     return {} as Record<string, string>;
@@ -160,12 +162,7 @@ function applyResponseBookmark(response: Response, options?: Pick<ApiRequestOpti
 }
 
 async function fetchWithSession(path: string, options?: ApiRequestOptions) {
-  const {
-    token,
-    bookmarkScope,
-    onBookmark,
-    ...requestInit
-  } = options ?? {};
+  const { token, bookmarkScope, onBookmark, ...requestInit } = options ?? {};
   const headers = new Headers(requestInit.headers);
 
   if (token) {
@@ -190,8 +187,10 @@ async function fetchWithSession(path: string, options?: ApiRequestOptions) {
 }
 
 function shouldClearAdminToken(token: string | undefined, status: number, code?: string) {
-  return code === ADMIN_ACCESS_DISABLED_ERROR_CODE
-    || ((status === 401 || status === 403) && typeof token === "string" && token.length > 0 && getAdminToken() === token);
+  return (
+    code === ADMIN_ACCESS_DISABLED_ERROR_CODE ||
+    ((status === 401 || status === 403) && typeof token === "string" && token.length > 0 && getAdminToken() === token)
+  );
 }
 
 async function throwApiError(response: Response, token?: string): Promise<never> {
@@ -287,26 +286,18 @@ export async function listEmails(
 }
 
 export async function getEmail(address: string, emailId: string, token: string) {
-  return request(
-    `/api/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`,
-    EmailDetail,
-    {
-      token,
-      bookmarkScope: getInboxBookmarkScope(address),
-    },
-  );
+  return request(`/api/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`, EmailDetail, {
+    token,
+    bookmarkScope: getInboxBookmarkScope(address),
+  });
 }
 
 export async function deleteEmail(address: string, emailId: string, token: string) {
-  return request(
-    `/api/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`,
-    OkResponse,
-    {
-      method: "DELETE",
-      token,
-      bookmarkScope: getInboxBookmarkScope(address),
-    },
-  );
+  return request(`/api/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`, OkResponse, {
+    method: "DELETE",
+    token,
+    bookmarkScope: getInboxBookmarkScope(address),
+  });
 }
 
 export async function deleteInbox(address: string, token: string) {
@@ -318,16 +309,12 @@ export async function deleteInbox(address: string, token: string) {
 }
 
 export async function extendInbox(address: string, token: string, ttlHours: TempMailboxTtlHours) {
-  return request(
-    `/api/inboxes/${encodeURIComponent(address)}/extend`,
-    ExtendInboxResponse,
-    {
-      method: "POST",
-      token,
-      bookmarkScope: getInboxBookmarkScope(address),
-      body: encodeJsonBody(ExtendInboxRequest, { ttlHours }),
-    },
-  );
+  return request(`/api/inboxes/${encodeURIComponent(address)}/extend`, ExtendInboxResponse, {
+    method: "POST",
+    token,
+    bookmarkScope: getInboxBookmarkScope(address),
+    body: encodeJsonBody(ExtendInboxRequest, { ttlHours }),
+  });
 }
 
 export async function createWebSocketTicket(address: string, token: string) {
@@ -397,12 +384,7 @@ export async function deleteAdminDomain(token: string, domain: string) {
   });
 }
 
-export async function downloadAttachment(
-  address: string,
-  emailId: string,
-  attachmentId: string,
-  token: string,
-) {
+export async function downloadAttachment(address: string, emailId: string, attachmentId: string, token: string) {
   const response = await fetchWithSession(
     `/api/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}/attachments/${encodeURIComponent(attachmentId)}`,
     {
@@ -519,10 +501,9 @@ export function storeInboxSession(session: InboxSessionType) {
     ttlHours: session.ttlHours,
     expiresAt: session.expiresAt,
   });
-  const next = writeStoredSessions([
-    summary,
-    ...pruneExpiredSessions().filter((item) => item.address !== session.address),
-  ].slice(0, 8));
+  const next = writeStoredSessions(
+    [summary, ...pruneExpiredSessions().filter((item) => item.address !== session.address)].slice(0, 8),
+  );
 
   localStorage.setItem(getInboxTokenStorageKey(session.address), session.token);
   sessionStorage.removeItem(getInboxTokenStorageKey(session.address));
@@ -603,8 +584,10 @@ export function isAdminAccessDisabledError(error: unknown) {
 }
 
 export function isAdminSessionError(error: unknown) {
-  return error instanceof ApiError
-    && (error.code === ADMIN_ACCESS_DISABLED_ERROR_CODE || error.status === 401 || error.status === 403);
+  return (
+    error instanceof ApiError &&
+    (error.code === ADMIN_ACCESS_DISABLED_ERROR_CODE || error.status === 401 || error.status === 403)
+  );
 }
 
 export function getErrorMessage(error: unknown) {
@@ -616,6 +599,5 @@ export function getErrorMessage(error: unknown) {
 }
 
 export function isTurnstileError(error: unknown) {
-  return error instanceof ApiError
-    && /human verification/i.test(error.message);
+  return error instanceof ApiError && /human verification/i.test(error.message);
 }

@@ -1,6 +1,11 @@
 import { and, asc, count, desc, eq, exists, gt, inArray, lt, sql } from "drizzle-orm";
 import { customAlphabet, nanoid } from "nanoid";
-import { ADMIN_TEMP_INBOX_PAGE_SIZE, TEMP_MAILBOX_TTL_HOURS, type SessionRecord, type TempMailboxTtlHours } from "@/shared/contracts";
+import {
+  ADMIN_TEMP_INBOX_PAGE_SIZE,
+  TEMP_MAILBOX_TTL_HOURS,
+  type SessionRecord,
+  type TempMailboxTtlHours,
+} from "@/shared/contracts";
 import { createDb, type Database } from "@/worker/db";
 import { domains, emails, inboxes } from "@/worker/db/schema";
 import { createLogger } from "@/worker/logger";
@@ -106,13 +111,9 @@ export async function revokeInboxSessionToken(env: Env, address: string) {
 export async function createWebSocketTicket(env: Env, address: string, session: SessionRecord) {
   const ticket = `wst_${nanoid(24)}`;
 
-  await env.SESSIONS.put(
-    `ws-ticket:${ticket}`,
-    JSON.stringify({ address, session }),
-    {
-      expirationTtl: Math.max(30, Math.ceil(WEBSOCKET_TICKET_TTL_MS / 1000)),
-    },
-  );
+  await env.SESSIONS.put(`ws-ticket:${ticket}`, JSON.stringify({ address, session }), {
+    expirationTtl: Math.max(30, Math.ceil(WEBSOCKET_TICKET_TTL_MS / 1000)),
+  });
 
   return ticket;
 }
@@ -132,7 +133,12 @@ export async function consumeWebSocketTicket(env: Env, ticket: string | null | u
   return decodeWebSocketTicket(raw);
 }
 
-export async function createTemporaryInbox(env: Env, requestedDomain: string, ttlHours: TempMailboxTtlHours, db?: Database) {
+export async function createTemporaryInbox(
+  env: Env,
+  requestedDomain: string,
+  ttlHours: TempMailboxTtlHours,
+  db?: Database,
+) {
   const database = db ?? createDb(env.DB);
   const domainRecord = await database.query.domains.findFirst({
     where: and(eq(domains.domain, requestedDomain), eq(domains.isActive, true)),
@@ -267,10 +273,7 @@ export async function listDomainsForAdmin(env: Env, db?: Database) {
     database.query.domains.findMany({
       orderBy: [asc(domains.domain)],
     }),
-    database
-      .select({ domain: inboxes.domain, inboxCount: count() })
-      .from(inboxes)
-      .groupBy(inboxes.domain),
+    database.select({ domain: inboxes.domain, inboxCount: count() }).from(inboxes).groupBy(inboxes.domain),
     database
       .select({ domain: inboxes.domain, inboxCount: count() })
       .from(inboxes)
@@ -319,7 +322,12 @@ export async function listActiveTemporaryInboxesForAdmin(
     eq(inboxes.isPermanent, false),
     gt(inboxes.expiresAt, now),
     hasEmails
-      ? exists(database.select({ n: sql`1` }).from(emails).where(eq(emails.inboxId, inboxes.id)))
+      ? exists(
+          database
+            .select({ n: sql`1` })
+            .from(emails)
+            .where(eq(emails.inboxId, inboxes.id)),
+        )
       : undefined,
   );
 
@@ -330,10 +338,7 @@ export async function listActiveTemporaryInboxesForAdmin(
       limit: pageSize,
       offset: currentPage * pageSize,
     }),
-    database
-      .select({ total: count() })
-      .from(inboxes)
-      .where(whereCondition),
+    database.select({ total: count() }).from(inboxes).where(whereCondition),
   ]);
 
   const emailCounts = items.length
@@ -453,11 +458,11 @@ export async function deleteDomainByName(env: Env, domainName: string, db?: Data
 
   if (deletableReservedInboxCount > 0) {
     const [emailCountRows] = await Promise.all([
-        database
-          .select({ total: count(emails.id) })
-          .from(inboxes)
-          .leftJoin(emails, eq(emails.inboxId, inboxes.id))
-          .where(deletableReservedInboxFilter),
+      database
+        .select({ total: count(emails.id) })
+        .from(inboxes)
+        .leftJoin(emails, eq(emails.inboxId, inboxes.id))
+        .where(deletableReservedInboxFilter),
     ]);
     const emailCount = emailCountRows[0]?.total ?? 0;
 
@@ -480,10 +485,7 @@ async function collectEmailIds(db: Database, inboxIds: string[]) {
     return [] as string[];
   }
 
-  const emailRows = await db
-    .select({ id: emails.id })
-    .from(emails)
-    .where(inArray(emails.inboxId, inboxIds));
+  const emailRows = await db.select({ id: emails.id }).from(emails).where(inArray(emails.inboxId, inboxIds));
 
   return emailRows.map((row) => row.id);
 }

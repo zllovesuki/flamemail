@@ -39,22 +39,22 @@ The system runs as a single Cloudflare Worker project that handles:
 
 ## Technology Stack
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| Runtime | Cloudflare Workers | HTTP API, email processing, cron cleanup |
-| Frontend | React SPA via Workers Static Assets | WebUI for viewing emails |
-| Real-time | Durable Objects (Hibernation WebSocket API) | Push notifications for new emails |
-| Metadata DB | D1 (SQLite) with Drizzle ORM | Inboxes, email metadata, domains |
-| ORM | Drizzle ORM (`drizzle-orm/d1`) + D1 Sessions API | Type-safe queries plus request-scoped sequentially consistent reads |
-| Body/Attachments | R2 (Object Storage) | Raw RFC 822 messages, parsed email HTML/text bodies, file attachments |
-| Sessions | KV | Access tokens with auto-expiry via TTL |
-| Email Ingestion | Cloudflare Email Routing (catch-all) | Receives inbound email |
-| Email Parsing | `postal-mime` | MIME parsing within Worker |
-| API Router | Hono | Lightweight, Workers-native, middleware support |
-| Human Verification | Cloudflare Turnstile | Bot friction for inbox creation and admin login |
-| Validation | `@cloudflare/util-en-garde` | Runtime codec-based request/session validation |
-| Config format | `wrangler.jsonc` | Latest recommended config format |
-| Build tool | Vite + `@cloudflare/vite-plugin` | Frontend build, dev server |
+| Component          | Technology                                       | Purpose                                                               |
+| ------------------ | ------------------------------------------------ | --------------------------------------------------------------------- |
+| Runtime            | Cloudflare Workers                               | HTTP API, email processing, cron cleanup                              |
+| Frontend           | React SPA via Workers Static Assets              | WebUI for viewing emails                                              |
+| Real-time          | Durable Objects (Hibernation WebSocket API)      | Push notifications for new emails                                     |
+| Metadata DB        | D1 (SQLite) with Drizzle ORM                     | Inboxes, email metadata, domains                                      |
+| ORM                | Drizzle ORM (`drizzle-orm/d1`) + D1 Sessions API | Type-safe queries plus request-scoped sequentially consistent reads   |
+| Body/Attachments   | R2 (Object Storage)                              | Raw RFC 822 messages, parsed email HTML/text bodies, file attachments |
+| Sessions           | KV                                               | Access tokens with auto-expiry via TTL                                |
+| Email Ingestion    | Cloudflare Email Routing (catch-all)             | Receives inbound email                                                |
+| Email Parsing      | `postal-mime`                                    | MIME parsing within Worker                                            |
+| API Router         | Hono                                             | Lightweight, Workers-native, middleware support                       |
+| Human Verification | Cloudflare Turnstile                             | Bot friction for inbox creation and admin login                       |
+| Validation         | `@cloudflare/util-en-garde`                      | Runtime codec-based request/session validation                        |
+| Config format      | `wrangler.jsonc`                                 | Latest recommended config format                                      |
+| Build tool         | Vite + `@cloudflare/vite-plugin`                 | Frontend build, dev server                                            |
 
 ---
 
@@ -289,7 +289,7 @@ flamemail/
     "directory": "./dist/client",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/ws"]
+    "run_worker_first": ["/api/*", "/ws"],
   },
 
   // D1 database
@@ -298,24 +298,24 @@ flamemail/
       "binding": "DB",
       "database_name": "flamemail-db",
       "database_id": "<generated-on-create>",
-      "migrations_dir": "drizzle"
-    }
+      "migrations_dir": "drizzle",
+    },
   ],
 
   // R2 bucket for raw emails, bodies, and attachments
   "r2_buckets": [
     {
       "binding": "STORAGE",
-      "bucket_name": "flamemail-emails"
-    }
+      "bucket_name": "flamemail-emails",
+    },
   ],
 
   // KV for session tokens
   "kv_namespaces": [
     {
       "binding": "SESSIONS",
-      "id": "<generated-on-create>"
-    }
+      "id": "<generated-on-create>",
+    },
   ],
 
   // Durable Objects
@@ -323,37 +323,38 @@ flamemail/
     "bindings": [
       {
         "name": "INBOX_WS",
-        "class_name": "InboxWebSocket"
-      }
-    ]
+        "class_name": "InboxWebSocket",
+      },
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["InboxWebSocket"]
-    }
+      "new_sqlite_classes": ["InboxWebSocket"],
+    },
   ],
 
   // Cron: cleanup expired inboxes every hour
   "triggers": {
-    "crons": ["0 * * * *"]
+    "crons": ["0 * * * *"],
   },
 
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
 
   // Custom domain routing
   "routes": [
     {
       "pattern": "flamemail.devbin.tools",
-      "custom_domain": true
-    }
-  ]
+      "custom_domain": true,
+    },
+  ],
 }
 ```
 
 > **Note:** Email routing (catch-all → Worker) is configured per-domain in the Cloudflare dashboard, not in `wrangler.jsonc`. For each domain in the pool:
+>
 > 1. Add domain to Cloudflare (requires authoritative DNS)
 > 2. Enable Email Routing
 > 3. Set catch-all to "Send to Worker" → `flamemail`
@@ -363,11 +364,11 @@ flamemail/
 
 The Worker expects these runtime bindings:
 
-| Binding | Purpose |
-|---------|---------|
-| `ADMIN_PASSWORD` | Admin session password; must be present and strong or admin access fails closed |
-| `TURNSTILE_SITE_KEY` | Public Turnstile site key returned by `GET /api/config` so the SPA can render the widget |
-| `TURNSTILE_SECRET_KEY` | Secret key used by the Worker to call Turnstile `siteverify` |
+| Binding                | Purpose                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------------------- |
+| `ADMIN_PASSWORD`       | Admin session password; must be present and strong or admin access fails closed          |
+| `TURNSTILE_SITE_KEY`   | Public Turnstile site key returned by `GET /api/config` so the SPA can render the widget |
+| `TURNSTILE_SECRET_KEY` | Secret key used by the Worker to call Turnstile `siteverify`                             |
 
 For local development, `.dev.vars.example` ships Cloudflare's published Turnstile test keys. They are suitable for local development and troubleshooting only; production should use a widget created for the deployed hostname.
 
@@ -400,66 +401,80 @@ import { sql } from "drizzle-orm";
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Pool of supported domains
-export const domains = sqliteTable("domains", {
-  id: text("id").primaryKey(),
-  domain: text("domain").notNull().unique(),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .notNull().default(sql`(unixepoch() * 1000)`),
-}, (table) => [
-  index("idx_domains_active").on(table.isActive),
-]);
+export const domains = sqliteTable(
+  "domains",
+  {
+    id: text("id").primaryKey(),
+    domain: text("domain").notNull().unique(),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+  },
+  (table) => [index("idx_domains_active").on(table.isActive)],
+);
 
 // Inboxes: both temporary and permanent
-export const inboxes = sqliteTable("inboxes", {
-  id: text("id").primaryKey(),
-  localPart: text("local_part").notNull(),
-  domain: text("domain").notNull(),
-  fullAddress: text("full_address").notNull().unique(),
-  isPermanent: integer("is_permanent", { mode: "boolean" }).notNull().default(false),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .notNull().default(sql`(unixepoch() * 1000)`),
-  expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
-}, (table) => [
-  uniqueIndex("idx_inboxes_local_domain").on(table.localPart, table.domain),
-  index("idx_inboxes_domain").on(table.domain),
-  index("idx_inboxes_permanent_expires").on(table.isPermanent, table.expiresAt),
-  index("idx_inboxes_permanent_created").on(table.isPermanent, table.createdAt),
-  index("idx_inboxes_permanent_domain_local").on(table.isPermanent, table.domain, table.localPart),
-]);
+export const inboxes = sqliteTable(
+  "inboxes",
+  {
+    id: text("id").primaryKey(),
+    localPart: text("local_part").notNull(),
+    domain: text("domain").notNull(),
+    fullAddress: text("full_address").notNull().unique(),
+    isPermanent: integer("is_permanent", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [
+    uniqueIndex("idx_inboxes_local_domain").on(table.localPart, table.domain),
+    index("idx_inboxes_domain").on(table.domain),
+    index("idx_inboxes_permanent_expires").on(table.isPermanent, table.expiresAt),
+    index("idx_inboxes_permanent_created").on(table.isPermanent, table.createdAt),
+    index("idx_inboxes_permanent_domain_local").on(table.isPermanent, table.domain, table.localPart),
+  ],
+);
 
 // Email metadata
-export const emails = sqliteTable("emails", {
-  id: text("id").primaryKey(),
-  inboxId: text("inbox_id").notNull()
-    .references(() => inboxes.id, { onDelete: "cascade" }),
-  recipientAddress: text("recipient_address").notNull(), // exact envelope recipient, including any +alias
-  fromAddress: text("from_address").notNull(),
-  fromName: text("from_name"),
-  subject: text("subject").default("(no subject)"),
-  receivedAt: integer("received_at", { mode: "timestamp_ms" })
-    .notNull().default(sql`(unixepoch() * 1000)`),
-  isRead: integer("is_read", { mode: "boolean" }).notNull().default(false),
-  sizeBytes: integer("size_bytes").default(0),
-  hasAttachments: integer("has_attachments", { mode: "boolean" })
-    .notNull().default(false),
-  bodyKey: text("body_key"),  // R2 object key for body content
-}, (table) => [
-  index("idx_emails_inbox_received_id").on(table.inboxId, table.receivedAt, table.id),
-]);
+export const emails = sqliteTable(
+  "emails",
+  {
+    id: text("id").primaryKey(),
+    inboxId: text("inbox_id")
+      .notNull()
+      .references(() => inboxes.id, { onDelete: "cascade" }),
+    recipientAddress: text("recipient_address").notNull(), // exact envelope recipient, including any +alias
+    fromAddress: text("from_address").notNull(),
+    fromName: text("from_name"),
+    subject: text("subject").default("(no subject)"),
+    receivedAt: integer("received_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`),
+    isRead: integer("is_read", { mode: "boolean" }).notNull().default(false),
+    sizeBytes: integer("size_bytes").default(0),
+    hasAttachments: integer("has_attachments", { mode: "boolean" }).notNull().default(false),
+    bodyKey: text("body_key"), // R2 object key for body content
+  },
+  (table) => [index("idx_emails_inbox_received_id").on(table.inboxId, table.receivedAt, table.id)],
+);
 
 // Attachment metadata
-export const attachments = sqliteTable("attachments", {
-  id: text("id").primaryKey(),
-  emailId: text("email_id").notNull()
-    .references(() => emails.id, { onDelete: "cascade" }),
-  filename: text("filename"),
-  contentType: text("content_type"),
-  sizeBytes: integer("size_bytes").default(0),
-  storageKey: text("storage_key").notNull(),  // R2 object key
-}, (table) => [
-  index("idx_attachments_email").on(table.emailId),
-]);
+export const attachments = sqliteTable(
+  "attachments",
+  {
+    id: text("id").primaryKey(),
+    emailId: text("email_id")
+      .notNull()
+      .references(() => emails.id, { onDelete: "cascade" }),
+    filename: text("filename"),
+    contentType: text("content_type"),
+    sizeBytes: integer("size_bytes").default(0),
+    storageKey: text("storage_key").notNull(), // R2 object key
+  },
+  (table) => [index("idx_attachments_email").on(table.emailId)],
+);
 ```
 
 ### `src/worker/db/relations.ts`
@@ -636,28 +651,28 @@ HTTP bookmark state is not stored in KV. The client keeps per-scope D1 bookmarks
 
 ## API Design
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `GET` | `/api/domains` | None | List available domains |
-| `GET` | `/api/config` | None | Return public runtime config for the SPA, currently `{ turnstileSiteKey }` |
-| `POST` | `/api/inboxes` | Turnstile | Create temp inbox → `{ address, token, ttlHours, expiresAt }` |
-| `GET` | `/api/inboxes/:address` | Token | Get inbox info |
-| `POST` | `/api/inboxes/:address/extend` | Token | Extend a temp inbox to 48h or 72h total lifetime |
-| `DELETE` | `/api/inboxes/:address` | Token | Delete inbox + all emails (owners can delete their inbox; admins can delete active temporary inboxes while inspecting them) |
-| `POST` | `/api/inboxes/:address/ws-ticket` | Token | Issue a one-time WebSocket upgrade ticket (60s TTL) |
-| `GET` | `/api/inboxes/:address/emails` | Token | List emails (paginated; `includeTotal=1` opt-in for count) |
-| `GET` | `/api/inboxes/:address/emails/:id` | Token | Get full email (fetches body from R2) |
-| `DELETE` | `/api/inboxes/:address/emails/:id` | Token | Delete single email |
-| `GET` | `/api/inboxes/:address/emails/:id/attachments/:attId` | Token | Download attachment from R2 |
-| `GET` | `/api/inboxes/:address/emails/:id/raw` | Admin token scoped to inbox access | View stored raw RFC 822 source from R2 |
-| `POST` | `/api/admin/login` | Password + Turnstile | Admin login → `{ token }` |
-| `GET` | `/api/admin/domains` | Admin token | List all domains with active status and inbox counts |
-| `GET` | `/api/admin/temp-inboxes?page=0` | Admin token | List active temporary inboxes with pagination and email counts |
-| `POST` | `/api/admin/domains` | Admin token | Add a new domain and optionally start it active |
-| `PATCH` | `/api/admin/domains/:domain` | Admin token | Enable or disable a domain |
-| `DELETE` | `/api/admin/domains/:domain` | Admin token | Delete a domain only if every remaining inbox is a reserved permanent inbox and none of those inboxes have emails |
-| `GET` | `/api/admin/inboxes` | Admin token | List seeded permanent inboxes |
-| `WS` | `/ws?address=...&ticket=...` | Ticket | WebSocket for real-time notifications (ticket from ws-ticket endpoint) |
+| Method   | Path                                                  | Auth                               | Description                                                                                                                 |
+| -------- | ----------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/domains`                                        | None                               | List available domains                                                                                                      |
+| `GET`    | `/api/config`                                         | None                               | Return public runtime config for the SPA, currently `{ turnstileSiteKey }`                                                  |
+| `POST`   | `/api/inboxes`                                        | Turnstile                          | Create temp inbox → `{ address, token, ttlHours, expiresAt }`                                                               |
+| `GET`    | `/api/inboxes/:address`                               | Token                              | Get inbox info                                                                                                              |
+| `POST`   | `/api/inboxes/:address/extend`                        | Token                              | Extend a temp inbox to 48h or 72h total lifetime                                                                            |
+| `DELETE` | `/api/inboxes/:address`                               | Token                              | Delete inbox + all emails (owners can delete their inbox; admins can delete active temporary inboxes while inspecting them) |
+| `POST`   | `/api/inboxes/:address/ws-ticket`                     | Token                              | Issue a one-time WebSocket upgrade ticket (60s TTL)                                                                         |
+| `GET`    | `/api/inboxes/:address/emails`                        | Token                              | List emails (paginated; `includeTotal=1` opt-in for count)                                                                  |
+| `GET`    | `/api/inboxes/:address/emails/:id`                    | Token                              | Get full email (fetches body from R2)                                                                                       |
+| `DELETE` | `/api/inboxes/:address/emails/:id`                    | Token                              | Delete single email                                                                                                         |
+| `GET`    | `/api/inboxes/:address/emails/:id/attachments/:attId` | Token                              | Download attachment from R2                                                                                                 |
+| `GET`    | `/api/inboxes/:address/emails/:id/raw`                | Admin token scoped to inbox access | View stored raw RFC 822 source from R2                                                                                      |
+| `POST`   | `/api/admin/login`                                    | Password + Turnstile               | Admin login → `{ token }`                                                                                                   |
+| `GET`    | `/api/admin/domains`                                  | Admin token                        | List all domains with active status and inbox counts                                                                        |
+| `GET`    | `/api/admin/temp-inboxes?page=0`                      | Admin token                        | List active temporary inboxes with pagination and email counts                                                              |
+| `POST`   | `/api/admin/domains`                                  | Admin token                        | Add a new domain and optionally start it active                                                                             |
+| `PATCH`  | `/api/admin/domains/:domain`                          | Admin token                        | Enable or disable a domain                                                                                                  |
+| `DELETE` | `/api/admin/domains/:domain`                          | Admin token                        | Delete a domain only if every remaining inbox is a reserved permanent inbox and none of those inboxes have emails           |
+| `GET`    | `/api/admin/inboxes`                                  | Admin token                        | List seeded permanent inboxes                                                                                               |
+| `WS`     | `/ws?address=...&ticket=...`                          | Ticket                             | WebSocket for real-time notifications (ticket from ws-ticket endpoint)                                                      |
 
 ### D1 Bookmark Header
 
@@ -669,6 +684,7 @@ HTTP bookmark state is not stored in KV. The client keeps per-scope D1 bookmarks
 ### Request/Response Examples
 
 **Public Config:**
+
 ```
 GET /api/config
 
@@ -679,6 +695,7 @@ GET /api/config
 ```
 
 **Create Inbox:**
+
 ```
 POST /api/inboxes
 Content-Type: application/json
@@ -695,6 +712,7 @@ Content-Type: application/json
 ```
 
 **Extend Inbox:**
+
 ```
 POST /api/inboxes/a7f2x9k3m1@example.com/extend
 Authorization: Bearer tok_abc123...
@@ -711,6 +729,7 @@ Content-Type: application/json
 ```
 
 **Admin Login:**
+
 ```
 POST /api/admin/login
 Content-Type: application/json
@@ -724,6 +743,7 @@ Content-Type: application/json
 ```
 
 **Admin Temporary Inboxes:**
+
 ```
 GET /api/admin/temp-inboxes?page=0
 Authorization: Bearer tok_admin...
@@ -747,6 +767,7 @@ Authorization: Bearer tok_admin...
 ```
 
 **List Emails:**
+
 ```
 GET /api/inboxes/a7f2x9k3m1@example.com/emails?page=0
 Authorization: Bearer tok_abc123...
@@ -774,6 +795,7 @@ Authorization: Bearer tok_abc123...
 `includeTotal=1` can be added when the caller explicitly needs a count for pagination or admin-style UIs.
 
 **WebSocket Messages (server → client):**
+
 ```json
 {
   "type": "new_email",
@@ -850,12 +872,12 @@ export class InboxWebSocket extends DurableObject {
 
 ### Cost Efficiency via Hibernation
 
-| Aspect | Without Hibernation | With Hibernation |
-|--------|-------------------|-----------------|
-| Duration billing | Charged entire time WebSocket is connected | Only while actively executing JS |
-| Idle connections | DO stays in memory | DO evicted, **no charges** |
-| Ping/pong | Manual handling keeps DO awake | Auto at edge, **does not wake DO** |
-| 100 DOs × 50 conns × 8h/day | ~$138/month | ~$10/month |
+| Aspect                      | Without Hibernation                        | With Hibernation                   |
+| --------------------------- | ------------------------------------------ | ---------------------------------- |
+| Duration billing            | Charged entire time WebSocket is connected | Only while actively executing JS   |
+| Idle connections            | DO stays in memory                         | DO evicted, **no charges**         |
+| Ping/pong                   | Manual handling keeps DO awake             | Auto at edge, **does not wake DO** |
+| 100 DOs × 50 conns × 8h/day | ~$138/month                                | ~$10/month                         |
 
 The `setWebSocketAutoResponse` for ping/pong is critical — it keeps clients connected through the Cloudflare edge without waking the Durable Object, eliminating duration charges for idle connections.
 
@@ -900,10 +922,10 @@ The frontend fetches `GET /api/domains` to present domain choices during inbox c
 
 ## Authentication Model
 
-| Inbox Type | Auth Mechanism | Token Storage | Lifetime |
-|-----------|---------------|---------------|----------|
-| Temporary | Random access token issued at creation | KV with TTL matching inbox expiry | 24h, 48h, or 72h |
-| Permanent (admin) | Admin password → session token | KV with 1h TTL | 1h per session |
+| Inbox Type        | Auth Mechanism                         | Token Storage                     | Lifetime         |
+| ----------------- | -------------------------------------- | --------------------------------- | ---------------- |
+| Temporary         | Random access token issued at creation | KV with TTL matching inbox expiry | 24h, 48h, or 72h |
+| Permanent (admin) | Admin password → session token         | KV with 1h TTL                    | 1h per session   |
 
 Anonymous write flows use Turnstile in addition to session auth. The client obtains the public site key from `GET /api/config`, renders the widget, and submits the returned token with the form. The Worker verifies the token server-side with Cloudflare and rejects missing, invalid, mismatched-action, or hostname-mismatched tokens.
 
@@ -953,14 +975,17 @@ const RESERVED_ADDRESSES = ["admin", "postmaster", "abuse", "webmaster"];
 
 for (const domain of activeDomains) {
   for (const local of RESERVED_ADDRESSES) {
-    await db.insert(inboxes).values({
-      id: nanoid(),
-      localPart: local,
-      domain: domain,
-      fullAddress: `${local}@${domain}`,
-      isPermanent: true,
-      expiresAt: null,  // never expires
-    }).onConflictDoNothing();
+    await db
+      .insert(inboxes)
+      .values({
+        id: nanoid(),
+        localPart: local,
+        domain: domain,
+        fullAddress: `${local}@${domain}`,
+        isPermanent: true,
+        expiresAt: null, // never expires
+      })
+      .onConflictDoNothing();
   }
 }
 ```
@@ -983,8 +1008,8 @@ Email HTML bodies are pre-processed through a client-side DOMParser-based saniti
 ```html
 <iframe
   sandbox="allow-popups allow-popups-to-escape-sandbox"
-  srcdoc={buildSrcDoc(preparedHtml)}
-  referrerPolicy="no-referrer"
+  srcdoc="{buildSrcDoc(preparedHtml)}"
+  referrerpolicy="no-referrer"
 />
 ```
 
@@ -1004,17 +1029,17 @@ Email HTML bodies are pre-processed through a client-side DOMParser-based saniti
 
 ## Implementation Phases
 
-| Phase | Tasks | Priority |
-|-------|-------|----------|
-| **1. Project Setup** | Init project with C3/Vite, configure `wrangler.jsonc`, create D1 database, R2 bucket, KV namespace, install Drizzle + Hono | Foundation |
-| **2. Database Layer** | Define Drizzle schema, generate initial migration, set up `createDb` factory, seed permanent inboxes | Foundation |
-| **3. Email Ingestion** | Implement `email()` handler, MIME parsing with `postal-mime`, early size / quota / attachment rejection, D1-first persistence, raw/body/attachment storage in R2, and best-effort websocket fanout | Core |
-| **4. REST API** | Build Hono routes for inbox CRUD, inbox extension, email listing/detail, attachment download, auth middleware | Core |
-| **5. WebSocket Notifications** | Implement `InboxWebSocket` Durable Object with Hibernation API + RPC notifications, connect email handler → DO notification, client-side hook | Core |
-| **6. React Frontend** | Inbox creation with domain picker + TTL selection, email list, email detail viewer, WebSocket integration, admin login | UI |
-| **7. Cleanup & Admin** | `scheduled()` handler for TTL cleanup (D1 + R2), admin inbox management, domain pool management, permanent inbox seeding | Operations |
-| **8. Multi-Domain** | Domain pool management API, per-domain Email Routing setup documentation | Extension |
-| **9. Hardening** | Turnstile, rate limiting, structured logging, input validation, error handling, observability, security headers, CORS | Polish |
+| Phase                          | Tasks                                                                                                                                                                                              | Priority   |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| **1. Project Setup**           | Init project with C3/Vite, configure `wrangler.jsonc`, create D1 database, R2 bucket, KV namespace, install Drizzle + Hono                                                                         | Foundation |
+| **2. Database Layer**          | Define Drizzle schema, generate initial migration, set up `createDb` factory, seed permanent inboxes                                                                                               | Foundation |
+| **3. Email Ingestion**         | Implement `email()` handler, MIME parsing with `postal-mime`, early size / quota / attachment rejection, D1-first persistence, raw/body/attachment storage in R2, and best-effort websocket fanout | Core       |
+| **4. REST API**                | Build Hono routes for inbox CRUD, inbox extension, email listing/detail, attachment download, auth middleware                                                                                      | Core       |
+| **5. WebSocket Notifications** | Implement `InboxWebSocket` Durable Object with Hibernation API + RPC notifications, connect email handler → DO notification, client-side hook                                                      | Core       |
+| **6. React Frontend**          | Inbox creation with domain picker + TTL selection, email list, email detail viewer, WebSocket integration, admin login                                                                             | UI         |
+| **7. Cleanup & Admin**         | `scheduled()` handler for TTL cleanup (D1 + R2), admin inbox management, domain pool management, permanent inbox seeding                                                                           | Operations |
+| **8. Multi-Domain**            | Domain pool management API, per-domain Email Routing setup documentation                                                                                                                           | Extension  |
+| **9. Hardening**               | Turnstile, rate limiting, structured logging, input validation, error handling, observability, security headers, CORS                                                                              | Polish     |
 
 ---
 
@@ -1022,101 +1047,101 @@ Email HTML bodies are pre-processed through a client-side DOMParser-based saniti
 
 ### Base Cost
 
-| Item | Cost |
-|------|------|
+| Item                                             | Cost            |
+| ------------------------------------------------ | --------------- |
 | Workers Paid plan (required for Durable Objects) | **$5.00/month** |
 
 ### Included Allowances (Workers Paid Plan, $5/month)
 
-| Resource | Included Free | Overage Rate |
-|----------|--------------|--------------|
-| Worker requests | 10M/month | $0.30/million |
-| D1 rows read | 25B/month | $0.001/million |
-| D1 rows written | 50M/month | $1.00/million |
-| D1 storage | 5 GB | $0.75/GB-month |
-| R2 storage | 10 GB/month | $0.015/GB-month |
-| R2 Class A ops (writes) | 1M/month | $4.50/million |
-| R2 Class B ops (reads) | 10M/month | $0.36/million |
-| R2 egress | Unlimited | $0 |
-| KV reads | 10M/month | $0.50/million |
-| KV writes | 1M/month | $5.00/million |
-| KV storage | 1 GB | $0.50/GB-month |
-| DO requests | 1M/month | $0.15/million |
-| DO duration | 400K GB-s/month | $12.50/million GB-s |
-| Email Routing | Unlimited | $0 |
-| Static Assets serving | Unlimited | $0 |
+| Resource                | Included Free   | Overage Rate        |
+| ----------------------- | --------------- | ------------------- |
+| Worker requests         | 10M/month       | $0.30/million       |
+| D1 rows read            | 25B/month       | $0.001/million      |
+| D1 rows written         | 50M/month       | $1.00/million       |
+| D1 storage              | 5 GB            | $0.75/GB-month      |
+| R2 storage              | 10 GB/month     | $0.015/GB-month     |
+| R2 Class A ops (writes) | 1M/month        | $4.50/million       |
+| R2 Class B ops (reads)  | 10M/month       | $0.36/million       |
+| R2 egress               | Unlimited       | $0                  |
+| KV reads                | 10M/month       | $0.50/million       |
+| KV writes               | 1M/month        | $5.00/million       |
+| KV storage              | 1 GB            | $0.50/GB-month      |
+| DO requests             | 1M/month        | $0.15/million       |
+| DO duration             | 400K GB-s/month | $12.50/million GB-s |
+| Email Routing           | Unlimited       | $0                  |
+| Static Assets serving   | Unlimited       | $0                  |
 
 ### Usage Scenarios
 
 #### Light: ~100 emails/day (3K/month)
 
-| Resource | Usage | Cost |
-|----------|-------|------|
-| Worker invocations | ~15K | $0 |
-| D1 writes | ~10K | $0 |
-| D1 reads | ~50K | $0 |
-| D1 storage | ~10 MB | $0 |
-| R2 writes | ~3K | $0 |
-| R2 reads | ~10K | $0 |
-| R2 storage | ~50 MB | $0 |
-| KV ops | ~5K | $0 |
-| DO (hibernating) | ~0.01 GB-s | $0 |
-| **Total** | | **$5.00/month** |
+| Resource           | Usage      | Cost            |
+| ------------------ | ---------- | --------------- |
+| Worker invocations | ~15K       | $0              |
+| D1 writes          | ~10K       | $0              |
+| D1 reads           | ~50K       | $0              |
+| D1 storage         | ~10 MB     | $0              |
+| R2 writes          | ~3K        | $0              |
+| R2 reads           | ~10K       | $0              |
+| R2 storage         | ~50 MB     | $0              |
+| KV ops             | ~5K        | $0              |
+| DO (hibernating)   | ~0.01 GB-s | $0              |
+| **Total**          |            | **$5.00/month** |
 
 #### Moderate: ~1,000 emails/day (30K/month)
 
-| Resource | Usage | Cost |
-|----------|-------|------|
-| Worker invocations | ~165K | $0 |
-| D1 writes | ~100K | $0 |
-| D1 reads | ~500K | $0 |
-| D1 storage | ~100 MB | $0 |
-| R2 writes | ~30K | $0 |
-| R2 reads | ~100K | $0 |
-| R2 storage | ~500 MB | $0 |
-| KV ops | ~50K | $0 |
-| DO (hibernating) | ~0.5 GB-s | $0 |
-| **Total** | | **$5.00/month** |
+| Resource           | Usage     | Cost            |
+| ------------------ | --------- | --------------- |
+| Worker invocations | ~165K     | $0              |
+| D1 writes          | ~100K     | $0              |
+| D1 reads           | ~500K     | $0              |
+| D1 storage         | ~100 MB   | $0              |
+| R2 writes          | ~30K      | $0              |
+| R2 reads           | ~100K     | $0              |
+| R2 storage         | ~500 MB   | $0              |
+| KV ops             | ~50K      | $0              |
+| DO (hibernating)   | ~0.5 GB-s | $0              |
+| **Total**          |           | **$5.00/month** |
 
 #### Heavy: ~10,000 emails/day (300K/month)
 
-| Resource | Usage | Cost |
-|----------|-------|------|
-| Worker invocations | ~1.5M | $0 |
-| D1 writes | ~1M | $0 |
-| D1 reads | ~5M | $0 |
-| D1 storage | ~1 GB | $0 |
-| R2 writes | ~300K | $0 |
-| R2 reads | ~1M | $0 |
-| R2 storage | ~3 GB | $0 |
-| KV ops | ~500K | $0 |
-| DO (hibernating) | ~5 GB-s | $0 |
-| **Total** | | **$5.00/month** |
+| Resource           | Usage   | Cost            |
+| ------------------ | ------- | --------------- |
+| Worker invocations | ~1.5M   | $0              |
+| D1 writes          | ~1M     | $0              |
+| D1 reads           | ~5M     | $0              |
+| D1 storage         | ~1 GB   | $0              |
+| R2 writes          | ~300K   | $0              |
+| R2 reads           | ~1M     | $0              |
+| R2 storage         | ~3 GB   | $0              |
+| KV ops             | ~500K   | $0              |
+| DO (hibernating)   | ~5 GB-s | $0              |
+| **Total**          |         | **$5.00/month** |
 
 #### Extreme: ~100,000 emails/day (3M/month)
 
-| Resource | Usage | Cost |
-|----------|-------|------|
-| Worker invocations | ~15M | $1.50 |
-| D1 writes | ~10M | $0 |
-| D1 reads | ~50M | $0 |
-| D1 storage | ~5 GB | $0 |
-| R2 writes | ~3M | $9.00 |
-| R2 reads | ~10M | $0 |
-| R2 storage | ~10 GB | $0 |
-| KV ops | ~5M | $0 |
-| DO (hibernating) | ~50 GB-s | $0 |
-| **Total** | | **~$15.50/month** |
+| Resource           | Usage    | Cost              |
+| ------------------ | -------- | ----------------- |
+| Worker invocations | ~15M     | $1.50             |
+| D1 writes          | ~10M     | $0                |
+| D1 reads           | ~50M     | $0                |
+| D1 storage         | ~5 GB    | $0                |
+| R2 writes          | ~3M      | $9.00             |
+| R2 reads           | ~10M     | $0                |
+| R2 storage         | ~10 GB   | $0                |
+| KV ops             | ~5M      | $0                |
+| DO (hibernating)   | ~50 GB-s | $0                |
+| **Total**          |          | **~$15.50/month** |
 
 ### Cost Summary
 
-| Daily Emails | Monthly Cost | Notes |
-|-------------|-------------|-------|
-| 100 | **$5.00** | Well within all included tiers |
-| 1,000 | **$5.00** | Still within all included tiers |
-| 10,000 | **$5.00** | Still within all included tiers |
-| 100,000 | **~$15.50** | Minor overages on Workers + R2 writes |
-| 1,000,000 | **~$110** | Significant R2 write costs; consider batching |
+| Daily Emails | Monthly Cost | Notes                                         |
+| ------------ | ------------ | --------------------------------------------- |
+| 100          | **$5.00**    | Well within all included tiers                |
+| 1,000        | **$5.00**    | Still within all included tiers               |
+| 10,000       | **$5.00**    | Still within all included tiers               |
+| 100,000      | **~$15.50**  | Minor overages on Workers + R2 writes         |
+| 1,000,000    | **~$110**    | Significant R2 write costs; consider batching |
 
 > The Hibernation WebSocket API is the key cost saver. Without it, 50 persistent WebSocket connections 24/7 would cost ~$70+/month in Durable Object duration charges alone. With hibernation, the same scenario costs **pennies**.
 
@@ -1124,19 +1149,19 @@ Email HTML bodies are pre-processed through a client-side DOMParser-based saniti
 
 ## Key Design Decisions & Rationale
 
-| Decision | Rationale |
-|----------|-----------|
-| **D1 for metadata, R2 for bodies** | D1 rows capped at 2MB; email bodies can be large. Keeping D1 lean enables fast queries and low read costs. R2 has free egress and lifecycle rules. |
-| **Drizzle ORM** | Type-safe queries with zero runtime overhead. `db.batch()` maps to D1's batch API for atomic operations. Migration tooling with `drizzle-kit`. |
-| **KV for sessions (not D1)** | Session lookups are read-heavy, latency-sensitive, and globally distributed. KV's edge caching is ideal. Built-in TTL handles auto-expiry. |
-| **One DO per inbox address** | Clean isolation. The DO only wakes when that specific inbox gets mail or has a connected client. Hibernation makes idle DOs free. |
-| **Workers Static Assets (not Pages)** | Cloudflare's recommended approach for new projects. Single deploy for frontend + backend. Free, unlimited static serving. |
-| **Hono as API router** | Lightweight, Workers-native, middleware support, TypeScript-first. Better than itty-router for structured APIs with middleware chains. |
-| **Cron for cleanup (not DO alarms)** | Simpler to manage centrally. One cron job scans all expired inboxes vs. thousands of individual DO alarms. |
-| **`wrangler.jsonc` (not `.toml`)** | Latest recommended format as of Wrangler v3.91+. JSON schema support enables IDE autocomplete. Some newer features are JSONC-only. |
-| **`postal-mime` for parsing** | Purpose-built for Workers environments. Lightweight, handles MIME multipart, attachments, and character encoding. |
-| **`nanoid` for IDs (not UUIDs)** | Shorter, URL-safe, higher entropy per character. Uses `crypto.getRandomValues()` under the hood for cryptographic randomness. Good fit for inbox local parts, database primary keys, and access tokens. |
-| **Apex domain support** | Cloudflare Email Routing works on apex domains directly. No subdomain requirement (e.g. `user@example.com` works, not just `user@mail.example.com`). |
+| Decision                              | Rationale                                                                                                                                                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1 for metadata, R2 for bodies**    | D1 rows capped at 2MB; email bodies can be large. Keeping D1 lean enables fast queries and low read costs. R2 has free egress and lifecycle rules.                                                      |
+| **Drizzle ORM**                       | Type-safe queries with zero runtime overhead. `db.batch()` maps to D1's batch API for atomic operations. Migration tooling with `drizzle-kit`.                                                          |
+| **KV for sessions (not D1)**          | Session lookups are read-heavy, latency-sensitive, and globally distributed. KV's edge caching is ideal. Built-in TTL handles auto-expiry.                                                              |
+| **One DO per inbox address**          | Clean isolation. The DO only wakes when that specific inbox gets mail or has a connected client. Hibernation makes idle DOs free.                                                                       |
+| **Workers Static Assets (not Pages)** | Cloudflare's recommended approach for new projects. Single deploy for frontend + backend. Free, unlimited static serving.                                                                               |
+| **Hono as API router**                | Lightweight, Workers-native, middleware support, TypeScript-first. Better than itty-router for structured APIs with middleware chains.                                                                  |
+| **Cron for cleanup (not DO alarms)**  | Simpler to manage centrally. One cron job scans all expired inboxes vs. thousands of individual DO alarms.                                                                                              |
+| **`wrangler.jsonc` (not `.toml`)**    | Latest recommended format as of Wrangler v3.91+. JSON schema support enables IDE autocomplete. Some newer features are JSONC-only.                                                                      |
+| **`postal-mime` for parsing**         | Purpose-built for Workers environments. Lightweight, handles MIME multipart, attachments, and character encoding.                                                                                       |
+| **`nanoid` for IDs (not UUIDs)**      | Shorter, URL-safe, higher entropy per character. Uses `crypto.getRandomValues()` under the hood for cryptographic randomness. Good fit for inbox local parts, database primary keys, and access tokens. |
+| **Apex domain support**               | Cloudflare Email Routing works on apex domains directly. No subdomain requirement (e.g. `user@example.com` works, not just `user@mail.example.com`).                                                    |
 
 ---
 
@@ -1180,25 +1205,25 @@ const parsed = await parser.parse(rawEmail);
 
 ### Limits
 
-| Limit | Value |
-|-------|-------|
-| Cloudflare Email Routing max message size | 25 MiB |
-| Application max accepted message size | 10 MiB |
-| Application max attachments per message | 10 |
-| Application max stored emails per inbox | 100 |
-| Rules per zone | 200 |
-| Worker CPU time (paid) | 30s per invocation |
+| Limit                                     | Value              |
+| ----------------------------------------- | ------------------ |
+| Cloudflare Email Routing max message size | 25 MiB             |
+| Application max accepted message size     | 10 MiB             |
+| Application max attachments per message   | 10                 |
+| Application max stored emails per inbox   | 100                |
+| Rules per zone                            | 200                |
+| Worker CPU time (paid)                    | 30s per invocation |
 
 ---
 
 ## Durable Objects Pricing Detail
 
-| Metric | Included (Paid Plan) | Overage |
-|--------|---------------------|---------|
-| Requests (incl. WS messages at 20:1 ratio) | 1M/month | $0.15/million |
-| Duration (128MB per DO) | 400,000 GB-s/month | $12.50/million GB-s |
-| DO SQLite storage: rows read | 25B/month | $0.001/million |
-| DO SQLite storage: rows written | 50M/month | $1.00/million |
-| DO SQLite storage: stored data | 5 GB | $0.20/GB-month |
+| Metric                                     | Included (Paid Plan) | Overage             |
+| ------------------------------------------ | -------------------- | ------------------- |
+| Requests (incl. WS messages at 20:1 ratio) | 1M/month             | $0.15/million       |
+| Duration (128MB per DO)                    | 400,000 GB-s/month   | $12.50/million GB-s |
+| DO SQLite storage: rows read               | 25B/month            | $0.001/million      |
+| DO SQLite storage: rows written            | 50M/month            | $1.00/million       |
+| DO SQLite storage: stored data             | 5 GB                 | $0.20/GB-month      |
 
 > WebSocket messages use a **20:1 billing ratio**: 100 incoming WebSocket messages count as 5 billed requests. Outgoing messages are free. Auto-response messages (ping/pong) incur no duration charges.

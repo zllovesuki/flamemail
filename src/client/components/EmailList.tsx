@@ -11,7 +11,14 @@ interface EmailListProps {
   onSelect: (emailId: string) => void;
 }
 
-export function EmailList({ inboxAddress, emails, selectedEmailId, loadingEmailId, loading, onSelect }: EmailListProps) {
+export function EmailList({
+  inboxAddress,
+  emails,
+  selectedEmailId,
+  loadingEmailId,
+  loading,
+  onSelect,
+}: EmailListProps) {
   return (
     <aside className="flex max-h-[calc(100vh-220px)] min-h-[560px] flex-col rounded-2xl border border-zinc-800/60 bg-zinc-900/50">
       <div className="flex items-start justify-between gap-3 p-5 pb-0">
@@ -62,7 +69,9 @@ export function EmailList({ inboxAddress, emails, selectedEmailId, loadingEmailI
                 <span className="absolute left-1.5 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-flame-500" />
               ) : null}
               <div className="flex items-center justify-between gap-2">
-                <strong className={`truncate text-sm ${unread ? "font-semibold text-zinc-100" : "font-medium text-zinc-300"}`}>
+                <strong
+                  className={`truncate text-sm ${unread ? "font-semibold text-zinc-100" : "font-medium text-zinc-300"}`}
+                >
                   {email.fromName || email.fromAddress}
                 </strong>
                 {loadingEmailId === email.id ? (

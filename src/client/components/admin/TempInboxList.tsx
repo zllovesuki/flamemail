@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Clock, Filter, Loader2, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import {
-  getErrorMessage,
-  isAdminSessionError,
-  listAdminTempInboxes,
-  type AdminTempInbox,
-} from "@/client/lib/api";
+import { getErrorMessage, isAdminSessionError, listAdminTempInboxes, type AdminTempInbox } from "@/client/lib/api";
 import { ADMIN_TEMP_INBOX_PAGE_SIZE } from "@/shared/contracts";
 
 interface TempInboxListProps {
@@ -55,7 +50,9 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
     };
 
     void load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [token, page, hasEmails, onSessionError]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -103,9 +100,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
       </div>
 
       {error ? (
-        <p className="mt-5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-          {error}
-        </p>
+        <p className="mt-5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>
       ) : null}
 
       {loading ? (
@@ -129,10 +124,14 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
               <div className="min-w-0">
                 <strong className="block truncate text-sm font-semibold text-zinc-200">{inbox.address}</strong>
                 <p className="mt-1 text-xs text-zinc-500">
-                  Created {formatDate(inbox.createdAt)} · Expires {inbox.expiresAt ? formatDate(inbox.expiresAt) : "never"}
+                  Created {formatDate(inbox.createdAt)} · Expires{" "}
+                  {inbox.expiresAt ? formatDate(inbox.expiresAt) : "never"}
                 </p>
                 <p className="mt-1 text-xs text-zinc-600">
-                  {inbox.domain} · {inbox.ttlHours ? `${inbox.ttlHours}h lifetime` : "temporary"} · <span className="font-medium text-zinc-400">{inbox.emailCount} email{inbox.emailCount !== 1 ? "s" : ""}</span>
+                  {inbox.domain} · {inbox.ttlHours ? `${inbox.ttlHours}h lifetime` : "temporary"} ·{" "}
+                  <span className="font-medium text-zinc-400">
+                    {inbox.emailCount} email{inbox.emailCount !== 1 ? "s" : ""}
+                  </span>
                 </p>
               </div>
 

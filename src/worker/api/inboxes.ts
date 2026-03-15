@@ -88,13 +88,15 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
     const ttlHours = inbox.expiresAt
       ? Math.round((inbox.expiresAt.getTime() - inbox.createdAt.getTime()) / (60 * 60 * 1000))
       : null;
-    return c.json(InboxInfo.create({
-      address: inbox.fullAddress,
-      isPermanent: inbox.isPermanent,
-      ttlHours: ttlHours !== null && isAllowedTempMailboxTtl(ttlHours) ? ttlHours : null,
-      expiresAt: inbox.expiresAt?.toISOString() ?? null,
-      createdAt: inbox.createdAt.toISOString(),
-    }));
+    return c.json(
+      InboxInfo.create({
+        address: inbox.fullAddress,
+        isPermanent: inbox.isPermanent,
+        ttlHours: ttlHours !== null && isAllowedTempMailboxTtl(ttlHours) ? ttlHours : null,
+        expiresAt: inbox.expiresAt?.toISOString() ?? null,
+        createdAt: inbox.createdAt.toISOString(),
+      }),
+    );
   });
 
   app.post("/api/inboxes/:address/extend", requireInboxAccess, async (c) => {
@@ -116,11 +118,13 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
 
     try {
       const result = await extendTemporaryInbox(c.env, inbox, token, session, body.ttlHours, c.get("db"));
-      return c.json(ExtendInboxResponse.create({
-        address: inbox.fullAddress,
-        ttlHours: result.ttlHours,
-        expiresAt: result.expiresAt.toISOString(),
-      }));
+      return c.json(
+        ExtendInboxResponse.create({
+          address: inbox.fullAddress,
+          ttlHours: result.ttlHours,
+          expiresAt: result.expiresAt.toISOString(),
+        }),
+      );
     } catch (error) {
       logger.warn("extend_inbox_failed", "Could not extend inbox", {
         address: inbox.fullAddress,

@@ -59,7 +59,7 @@ export function InboxView({ onDeleted }: InboxViewProps) {
   const userSession = address ? getInboxSession(address) : null;
   const adminToken = getAdminToken();
   const adminMode = searchParams.get("admin") === "1" || (!userSession && Boolean(adminToken));
-  const token = adminMode ? adminToken : userSession?.token ?? null;
+  const token = adminMode ? adminToken : (userSession?.token ?? null);
 
   const session = token && address ? { address, token } : null;
   const {
@@ -172,10 +172,13 @@ export function InboxView({ onDeleted }: InboxViewProps) {
               <ShieldAlert className="h-7 w-7 text-zinc-600" />
             </span>
             <div>
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-600">Missing Session</span>
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zinc-600">
+                Missing Session
+              </span>
               <h1 className="text-xl font-semibold text-zinc-200">This inbox is not stored locally</h1>
               <p className="mt-3 max-w-md text-sm text-zinc-500">
-                Open it from the device that created it before the inbox expires, or sign in as an admin for permanent inboxes.
+                Open it from the device that created it before the inbox expires, or sign in as an admin for permanent
+                inboxes.
               </p>
             </div>
           </div>
@@ -232,18 +235,19 @@ export function InboxView({ onDeleted }: InboxViewProps) {
             <RefreshCw className="h-3.5 w-3.5" />
             Refresh
           </button>
-          {!adminMode && availableExtensions.map((ttlHours) => (
-            <button
-              key={ttlHours}
-              className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
-              type="button"
-              disabled={extendingTo !== null}
-              onClick={() => void handleExtendInbox(ttlHours)}
-            >
-              <Clock className="h-3.5 w-3.5" />
-              {extendingTo === ttlHours ? `Extending...` : `Extend ${ttlHours}h`}
-            </button>
-          ))}
+          {!adminMode &&
+            availableExtensions.map((ttlHours) => (
+              <button
+                key={ttlHours}
+                className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+                disabled={extendingTo !== null}
+                onClick={() => void handleExtendInbox(ttlHours)}
+              >
+                <Clock className="h-3.5 w-3.5" />
+                {extendingTo === ttlHours ? `Extending...` : `Extend ${ttlHours}h`}
+              </button>
+            ))}
           {inbox && !inbox.isPermanent ? (
             <button
               className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/20"
@@ -258,9 +262,7 @@ export function InboxView({ onDeleted }: InboxViewProps) {
       </section>
 
       {error ? (
-        <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-400">
-          {error}
-        </p>
+        <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-400">{error}</p>
       ) : null}
 
       {/* Email list + detail — desktop: side-by-side, mobile: toggle */}

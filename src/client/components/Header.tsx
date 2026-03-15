@@ -25,9 +25,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
             end
             className={({ isActive }) =>
               `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-flame-500/10 text-flame-400"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                isActive ? "bg-flame-500/10 text-flame-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
               }`
             }
           >
@@ -44,9 +42,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
             to="/about"
             className={({ isActive }) =>
               `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-flame-500/10 text-flame-400"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                isActive ? "bg-flame-500/10 text-flame-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
               }`
             }
           >
@@ -57,9 +53,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
             to="/admin"
             className={({ isActive }) =>
               `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-flame-500/10 text-flame-400"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                isActive ? "bg-flame-500/10 text-flame-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
               }`
             }
           >

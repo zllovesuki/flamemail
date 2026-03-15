@@ -247,12 +247,7 @@ function guessContentType(filename) {
 }
 
 function createTextPart(contentType, body) {
-  return [
-    `Content-Type: ${contentType}`,
-    "Content-Transfer-Encoding: 7bit",
-    "",
-    body,
-  ].join("\r\n");
+  return [`Content-Type: ${contentType}`, "Content-Transfer-Encoding: 7bit", "", body].join("\r\n");
 }
 
 function createAttachmentPart(attachment) {

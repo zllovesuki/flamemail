@@ -205,9 +205,7 @@ export function AdminLogin() {
               type="submit"
               disabled={loading || password.length === 0 || !turnstileToken}
             >
-              {loading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : null}
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
               {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
@@ -230,10 +228,7 @@ export function AdminLogin() {
               onAdminSessionError={resetAdminState}
               onReload={handleReload}
             />
-            <TempInboxList
-              token={token}
-              onSessionError={resetAdminState}
-            />
+            <TempInboxList token={token} onSessionError={resetAdminState} />
           </div>
           <PermanentInboxList inboxes={inboxes} loading={loading} />
         </section>

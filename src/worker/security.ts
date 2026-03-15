@@ -14,10 +14,7 @@ const APP_CONTENT_SECURITY_POLICY = [
   "form-action 'self'",
 ].join("; ");
 const MIN_ADMIN_PASSWORD_LENGTH = 16;
-const DISALLOWED_ADMIN_PASSWORDS = new Set([
-  "change-me",
-  "replace-with-a-unique-strong-password",
-]);
+const DISALLOWED_ADMIN_PASSWORDS = new Set(["change-me", "replace-with-a-unique-strong-password"]);
 
 export const ADMIN_ACCESS_UNAVAILABLE_MESSAGE =
   "Admin access is unavailable because ADMIN_PASSWORD is not configured securely.";

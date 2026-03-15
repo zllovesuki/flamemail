@@ -119,7 +119,8 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
 
     rawWindow.document.title = `Raw email ${email.id}`;
     rawWindow.document.body.textContent = "Loading raw source...";
-    rawWindow.document.body.style.cssText = "margin:0;padding:16px;background:#0f172a;color:#cbd5e1;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;";
+    rawWindow.document.body.style.cssText =
+      "margin:0;padding:16px;background:#0f172a;color:#cbd5e1;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;";
     rawWindow.document.documentElement.style.colorScheme = "dark";
     setDownloadingRaw(true);
 
@@ -159,9 +160,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
           <div>
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-zinc-600">Viewer</span>
             <h2 className="text-lg font-semibold text-zinc-300">Select an email</h2>
-            <p className="mt-2 max-w-sm text-sm text-zinc-500">
-              Pick a message from the list to view its contents.
-            </p>
+            <p className="mt-2 max-w-sm text-sm text-zinc-500">Pick a message from the list to view its contents.</p>
           </div>
         </div>
       </section>
@@ -206,9 +205,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
         </div>
         <p className="mt-1 text-xs text-zinc-400">
           <span className="font-medium text-zinc-300">{email.fromName || email.fromAddress}</span>
-          {email.fromName ? (
-            <span className="ml-1 text-zinc-500">&lt;{email.fromAddress}&gt;</span>
-          ) : null}
+          {email.fromName ? <span className="ml-1 text-zinc-500">&lt;{email.fromAddress}&gt;</span> : null}
           <span className="mx-1.5 text-zinc-600">&middot;</span>
           {new Date(email.receivedAt).toLocaleString()}
           <span className="mx-1.5 text-zinc-600">&middot;</span>
@@ -240,7 +237,9 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
                   <Download className="h-4 w-4 shrink-0 text-zinc-500" />
                 )}
                 <span>
-                  <strong className="block text-xs font-medium text-zinc-300">{attachment.filename || "attachment.bin"}</strong>
+                  <strong className="block text-xs font-medium text-zinc-300">
+                    {attachment.filename || "attachment.bin"}
+                  </strong>
                   <span className="text-xs text-zinc-500">{formatSize(attachment.sizeBytes)}</span>
                 </span>
               </button>

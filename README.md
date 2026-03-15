@@ -44,13 +44,13 @@ Local development uses the Cloudflare Turnstile test keys in `.dev.vars.example`
 
 ### Handy Scripts
 
-| Command | What it does |
-|---------|-------------|
-| `npm run dev` | Start the local dev server |
-| `npm run email:local` | Send a test email to the local worker |
+| Command                  | What it does                              |
+| ------------------------ | ----------------------------------------- |
+| `npm run dev`            | Start the local dev server                |
+| `npm run email:local`    | Send a test email to the local worker     |
 | `npm run db:local:reset` | Wipe and re-migrate the local D1 database |
-| `npm run check` | Type-check the entire project |
-| `npm run build` | Build the frontend for production |
+| `npm run check`          | Type-check the entire project             |
+| `npm run build`          | Build the frontend for production         |
 
 ---
 
@@ -70,17 +70,17 @@ Inbound Email
 
 ### Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Runtime** | Cloudflare Workers |
-| **Frontend** | React + Tailwind CSS (Vite) |
-| **Real-time** | Durable Objects — Hibernation WebSocket API |
-| **Database** | D1 (SQLite) + Drizzle ORM + D1 Sessions |
-| **Object Storage** | R2 — raw `.eml`, parsed bodies, attachments |
-| **Sessions** | KV — access tokens with auto-expiring TTL |
-| **API Router** | Hono |
-| **Email Parsing** | postal-mime |
-| **Human Verification** | Cloudflare Turnstile |
+| Layer                  | Technology                                  |
+| ---------------------- | ------------------------------------------- |
+| **Runtime**            | Cloudflare Workers                          |
+| **Frontend**           | React + Tailwind CSS (Vite)                 |
+| **Real-time**          | Durable Objects — Hibernation WebSocket API |
+| **Database**           | D1 (SQLite) + Drizzle ORM + D1 Sessions     |
+| **Object Storage**     | R2 — raw `.eml`, parsed bodies, attachments |
+| **Sessions**           | KV — access tokens with auto-expiring TTL   |
+| **API Router**         | Hono                                        |
+| **Email Parsing**      | postal-mime                                 |
+| **Human Verification** | Cloudflare Turnstile                        |
 
 ---
 
@@ -107,6 +107,7 @@ npx wrangler deploy
    - `TURNSTILE_SECRET_KEY` — secret used by the Worker to verify challenge responses
 
    If Turnstile is not configured, flamemail fails closed and blocks inbox creation plus admin login.
+
 5. Optional but recommended: enable **D1 read replication** in the Cloudflare dashboard for lower global read latency. flamemail already propagates D1 bookmarks on HTTP requests, so read replication can be enabled without app code changes.
 
 ---

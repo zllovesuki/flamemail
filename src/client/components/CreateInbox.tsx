@@ -113,7 +113,8 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
         Get a disposable address that lives on this device until it expires. Emails arrive in real time.
       </p>
       <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-        Plus aliases like <span className="font-medium text-zinc-400">name+tag@domain</span> route to the same inbox, and each message shows the exact delivered address.
+        Plus aliases like <span className="font-medium text-zinc-400">name+tag@domain</span> route to the same inbox,
+        and each message shows the exact delivered address.
       </p>
 
       <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
@@ -175,9 +176,13 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
           disabled={loading || submitting || !selectedDomain || !turnstileToken}
         >
           {submitting ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Creating...</>
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Creating...
+            </>
           ) : (
-            <><Sparkles className="h-4 w-4" /> Create inbox</>
+            <>
+              <Sparkles className="h-4 w-4" /> Create inbox
+            </>
           )}
         </button>
       </form>

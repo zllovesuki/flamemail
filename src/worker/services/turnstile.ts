@@ -122,11 +122,9 @@ export async function verifyTurnstileToken(
   }
 
   const isTestingKeyResponse =
-    TURNSTILE_TEST_SECRET_KEYS.has(secret)
-    && (
-      verification.action === "test"
-      || (verification.metadata?.result_with_testing_key === true && !verification.action)
-    );
+    TURNSTILE_TEST_SECRET_KEYS.has(secret) &&
+    (verification.action === "test" ||
+      (verification.metadata?.result_with_testing_key === true && !verification.action));
 
   if (!verification.success) {
     return {
@@ -138,9 +136,7 @@ export async function verifyTurnstileToken(
     };
   }
 
-  const actionMatches =
-    verification.action === options.expectedAction
-    || isTestingKeyResponse;
+  const actionMatches = verification.action === options.expectedAction || isTestingKeyResponse;
 
   if (!actionMatches) {
     return {

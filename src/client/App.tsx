@@ -53,9 +53,11 @@ function HomePage({
                     className="group flex items-center gap-3 rounded-xl border border-zinc-800/50 bg-zinc-800/30 px-4 py-3 transition-colors hover:border-flame-500/30 hover:bg-zinc-800/60"
                     to={`/inbox/${encodeURIComponent(session.address)}`}
                   >
-                    <span className={`inline-grid h-7 w-7 shrink-0 place-items-center rounded-full ${
-                      alive ? "bg-flame-500/10 text-flame-400" : "bg-zinc-800 text-zinc-600"
-                    }`}>
+                    <span
+                      className={`inline-grid h-7 w-7 shrink-0 place-items-center rounded-full ${
+                        alive ? "bg-flame-500/10 text-flame-400" : "bg-zinc-800 text-zinc-600"
+                      }`}
+                    >
                       <Mail className="h-3.5 w-3.5" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -64,9 +66,7 @@ function HomePage({
                       </strong>
                       <span className="flex items-center gap-1 text-xs text-zinc-500">
                         <Clock className="h-3 w-3" />
-                        {alive
-                          ? `expires ${expires.toLocaleString()}`
-                          : "expired"}
+                        {alive ? `expires ${expires.toLocaleString()}` : "expired"}
                       </span>
                     </div>
                   </Link>

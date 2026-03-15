@@ -103,7 +103,8 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
           </div>
           <h2 className="text-lg font-semibold text-zinc-100">Manage inbound domains</h2>
           <p className="mt-2 text-sm text-zinc-500">
-            Active domains are available for public inbox creation. Disabled domains no longer accept new temporary inboxes or inbound mail.
+            Active domains are available for public inbox creation. Disabled domains no longer accept new temporary
+            inboxes or inbound mail.
           </p>
         </div>
         <span className="shrink-0 whitespace-nowrap rounded-full border border-zinc-800/60 bg-zinc-900 px-3 py-1 text-xs text-zinc-500">
@@ -137,11 +138,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
           disabled={busy === "add" || newDomain.trim().length === 0}
           className="flex items-center justify-center gap-1.5 rounded-xl bg-flame-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-flame-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy === "add" ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Plus className="h-3.5 w-3.5" />
-          )}
+          {busy === "add" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
           {busy === "add" ? "Adding..." : "Add domain"}
         </button>
       </form>
@@ -153,9 +150,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
             Loading domains...
           </p>
         ) : null}
-        {!loading && domains.length === 0 ? (
-          <p className="text-sm text-zinc-500">No domains configured yet.</p>
-        ) : null}
+        {!loading && domains.length === 0 ? <p className="text-sm text-zinc-500">No domains configured yet.</p> : null}
 
         {domains.map((domain) => {
           const isBusy = busy === domain.domain;
@@ -169,16 +164,15 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
                     <span
                       className={[
                         "rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wider",
-                        domain.isActive
-                          ? "bg-emerald-500/10 text-emerald-400"
-                          : "bg-zinc-700/60 text-zinc-400",
+                        domain.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-zinc-700/60 text-zinc-400",
                       ].join(" ")}
                     >
                       {domain.isActive ? "active" : "disabled"}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Added {formatDate(domain.createdAt)} · {domain.inboxCount} inbox{domain.inboxCount !== 1 ? "es" : ""}
+                    Added {formatDate(domain.createdAt)} · {domain.inboxCount} inbox
+                    {domain.inboxCount !== 1 ? "es" : ""}
                   </p>
                 </div>
 
@@ -189,11 +183,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
                     onClick={() => void handleToggle(domain)}
                     className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700/60 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {domain.isActive ? (
-                      <PowerOff className="h-3 w-3" />
-                    ) : (
-                      <Power className="h-3 w-3" />
-                    )}
+                    {domain.isActive ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}
                     {isBusy ? "Saving..." : domain.isActive ? "Disable" : "Enable"}
                   </button>
                   <button

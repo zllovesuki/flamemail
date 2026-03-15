@@ -6,9 +6,7 @@ function normalizeContext(context?: LogContext): LogContext | undefined {
     return undefined;
   }
 
-  return Object.fromEntries(
-    Object.entries(context).filter(([, value]) => value !== undefined),
-  );
+  return Object.fromEntries(Object.entries(context).filter(([, value]) => value !== undefined));
 }
 
 function write(level: LogLevel, scope: string, event: string, message: string, context?: LogContext) {

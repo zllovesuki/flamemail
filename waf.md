@@ -8,15 +8,15 @@ The goal is not to eliminate all abuse at the edge. The goal is to reduce cheap 
 
 Your flamemail deployment exposes a small HTTP surface:
 
-| Surface | Notes |
-|---------|-------|
-| SPA routes (`/`, `/about`, `/admin`, `/link`, `/inbox/:address`) | Public pages and route shells |
-| `GET /api/domains` | Public, read-only |
-| `GET /api/config` | Public, read-only bootstrap for the Turnstile site key |
-| `POST /api/inboxes` | Public write endpoint that creates inbox state |
-| `POST /api/admin/login` | Public write endpoint for admin authentication |
-| Most other `/api/*` routes | Protected by bearer tokens |
-| `/ws` | WebSocket upgrade endpoint using a one-time ticket |
+| Surface                                                          | Notes                                                  |
+| ---------------------------------------------------------------- | ------------------------------------------------------ |
+| SPA routes (`/`, `/about`, `/admin`, `/link`, `/inbox/:address`) | Public pages and route shells                          |
+| `GET /api/domains`                                               | Public, read-only                                      |
+| `GET /api/config`                                                | Public, read-only bootstrap for the Turnstile site key |
+| `POST /api/inboxes`                                              | Public write endpoint that creates inbox state         |
+| `POST /api/admin/login`                                          | Public write endpoint for admin authentication         |
+| Most other `/api/*` routes                                       | Protected by bearer tokens                             |
+| `/ws`                                                            | WebSocket upgrade endpoint using a one-time ticket     |
 
 flamemail already includes several useful protections in the Worker:
 
@@ -36,13 +36,13 @@ What flamemail still does **not** include is strong application-side throttling 
 
 If you are deploying on Cloudflare Free, you can generally rely on:
 
-| Capability | Availability |
-|------------|--------------|
-| L7 DDoS mitigation | Included |
-| Free Managed Ruleset | Included |
-| Custom WAF rules | 5 rules |
-| Rate limiting rules | Limited on Free — verify your current quota in the dashboard |
-| Bot Fight Mode | Included, but broad and not configurable |
+| Capability           | Availability                                                 |
+| -------------------- | ------------------------------------------------------------ |
+| L7 DDoS mitigation   | Included                                                     |
+| Free Managed Ruleset | Included                                                     |
+| Custom WAF rules     | 5 rules                                                      |
+| Rate limiting rules  | Limited on Free — verify your current quota in the dashboard |
+| Bot Fight Mode       | Included, but broad and not configurable                     |
 
 For most self-hosted flamemail deployments, rate-limiting capacity is the main constraint. If your zone only has room for a single rate-limit rule, spend it on `POST /api/inboxes`. If your plan or dashboard exposes more than one rule, the next best target is `POST /api/admin/login`.
 
@@ -104,13 +104,13 @@ If you only have room for one rule, this is usually the best place to use it.
 
 Suggested starting rule:
 
-| Parameter | Value |
-|-----------|-------|
-| Expression | `http.host eq "<YOUR_HOSTNAME>" and http.request.method eq "POST" and http.request.uri.path eq "/api/inboxes"` |
-| Counting | Per IP |
-| Threshold | 3–5 requests / 10 s |
-| Action | Block |
-| Mitigation timeout | 10 s |
+| Parameter          | Value                                                                                                          |
+| ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Expression         | `http.host eq "<YOUR_HOSTNAME>" and http.request.method eq "POST" and http.request.uri.path eq "/api/inboxes"` |
+| Counting           | Per IP                                                                                                         |
+| Threshold          | 3–5 requests / 10 s                                                                                            |
+| Action             | Block                                                                                                          |
+| Mitigation timeout | 10 s                                                                                                           |
 
 This is intentionally conservative. It will slow down casual abuse, but it is **not** a replacement for application-side throttling. Cloudflare also documents rate limiting as approximate, so some excess requests may still reach your Worker before mitigation starts.
 
@@ -276,14 +276,14 @@ If you are setting up a new deployment, this is a reasonable order of operations
 
 ## Recommended baseline at a glance
 
-| Layer | Recommended baseline |
-|-------|----------------------|
-| Managed Rules | Enable the Free Managed Ruleset |
-| Browser filtering | Keep Browser Integrity Check enabled |
-| Bot controls | Treat Bot Fight Mode as optional and test before keeping it on |
-| Rate limiting | Prioritize `POST /api/inboxes`, then `POST /api/admin/login` if quota allows |
-| Custom rules | Challenge `/admin`, block recon paths, reject invalid `/ws`, optionally restrict `/api/admin/*` by IP |
-| Form protection | Keep Turnstile enabled on inbox creation and admin login |
-| Application controls | Add Worker-side throttling, login lockouts, and email abuse controls |
+| Layer                | Recommended baseline                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------------- |
+| Managed Rules        | Enable the Free Managed Ruleset                                                                       |
+| Browser filtering    | Keep Browser Integrity Check enabled                                                                  |
+| Bot controls         | Treat Bot Fight Mode as optional and test before keeping it on                                        |
+| Rate limiting        | Prioritize `POST /api/inboxes`, then `POST /api/admin/login` if quota allows                          |
+| Custom rules         | Challenge `/admin`, block recon paths, reject invalid `/ws`, optionally restrict `/api/admin/*` by IP |
+| Form protection      | Keep Turnstile enabled on inbox creation and admin login                                              |
+| Application controls | Add Worker-side throttling, login lockouts, and email abuse controls                                  |
 
 For most operators, Cloudflare Free provides a useful first layer. The strongest deployment comes from combining a focused edge configuration with flamemail's built-in Turnstile checks and additional application-side abuse controls.

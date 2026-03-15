@@ -6,7 +6,20 @@ import { requireInboxAccess } from "@/worker/middleware/auth";
 import { deleteStorageForEmails, getRawStorageKey, readEmailBody } from "@/worker/services/storage";
 import type { AppBindings } from "@/worker/types";
 
-function toSummary(email: Pick<typeof emails.$inferSelect, "id" | "recipientAddress" | "fromAddress" | "fromName" | "subject" | "receivedAt" | "isRead" | "hasAttachments" | "sizeBytes">) {
+function toSummary(
+  email: Pick<
+    typeof emails.$inferSelect,
+    | "id"
+    | "recipientAddress"
+    | "fromAddress"
+    | "fromName"
+    | "subject"
+    | "receivedAt"
+    | "isRead"
+    | "hasAttachments"
+    | "sizeBytes"
+  >,
+) {
   return {
     id: email.id,
     recipientAddress: email.recipientAddress,
@@ -47,14 +60,16 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
       .offset(currentPage * EMAIL_PAGE_SIZE);
 
     const total = includeTotal
-      ? (await db.select({ total: count() }).from(emails).where(eq(emails.inboxId, inbox.id)))[0]?.total ?? 0
+      ? ((await db.select({ total: count() }).from(emails).where(eq(emails.inboxId, inbox.id)))[0]?.total ?? 0)
       : null;
 
-    return c.json(EmailPage.create({
-      emails: emailRows.map(toSummary),
-      total,
-      page: currentPage,
-    }));
+    return c.json(
+      EmailPage.create({
+        emails: emailRows.map(toSummary),
+        total,
+        page: currentPage,
+      }),
+    );
   });
 
   app.get("/api/inboxes/:address/emails/:id", requireInboxAccess, async (c) => {
@@ -81,25 +96,27 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
       await db.update(emails).set({ isRead: true }).where(eq(emails.id, emailRecord.id));
     }
 
-    return c.json(EmailDetail.create({
-      id: emailRecord.id,
-      recipientAddress: emailRecord.recipientAddress,
-      fromAddress: emailRecord.fromAddress,
-      fromName: emailRecord.fromName,
-      subject: emailRecord.subject ?? "(no subject)",
-      receivedAt: emailRecord.receivedAt.toISOString(),
-      isRead: shouldMarkRead ? true : emailRecord.isRead,
-      hasAttachments: emailRecord.hasAttachments,
-      sizeBytes: emailRecord.sizeBytes ?? 0,
-      text: body.text,
-      html: body.html,
-      attachments: emailRecord.attachments.map((attachment) => ({
-        id: attachment.id,
-        filename: attachment.filename,
-        contentType: attachment.contentType,
-        sizeBytes: attachment.sizeBytes ?? 0,
-      })),
-    }));
+    return c.json(
+      EmailDetail.create({
+        id: emailRecord.id,
+        recipientAddress: emailRecord.recipientAddress,
+        fromAddress: emailRecord.fromAddress,
+        fromName: emailRecord.fromName,
+        subject: emailRecord.subject ?? "(no subject)",
+        receivedAt: emailRecord.receivedAt.toISOString(),
+        isRead: shouldMarkRead ? true : emailRecord.isRead,
+        hasAttachments: emailRecord.hasAttachments,
+        sizeBytes: emailRecord.sizeBytes ?? 0,
+        text: body.text,
+        html: body.html,
+        attachments: emailRecord.attachments.map((attachment) => ({
+          id: attachment.id,
+          filename: attachment.filename,
+          contentType: attachment.contentType,
+          sizeBytes: attachment.sizeBytes ?? 0,
+        })),
+      }),
+    );
   });
 
   app.get("/api/inboxes/:address/emails/:id/raw", requireInboxAccess, async (c) => {
@@ -162,60 +179,52 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
     return c.json(OkResponse.create({ ok: true }));
   });
 
-  app.get(
-    "/api/inboxes/:address/emails/:id/attachments/:attId",
-    requireInboxAccess,
-    async (c) => {
-      const inbox = c.get("inbox");
-      const db = c.get("db");
-      const emailId = c.req.param("id");
-      const attachmentId = c.req.param("attId");
+  app.get("/api/inboxes/:address/emails/:id/attachments/:attId", requireInboxAccess, async (c) => {
+    const inbox = c.get("inbox");
+    const db = c.get("db");
+    const emailId = c.req.param("id");
+    const attachmentId = c.req.param("attId");
 
-      const attachment = await db
-        .select({
-          id: attachments.id,
-          filename: attachments.filename,
-          contentType: attachments.contentType,
-          storageKey: attachments.storageKey,
-        })
-        .from(attachments)
-        .innerJoin(emails, eq(attachments.emailId, emails.id))
-        .where(and(
-          eq(attachments.id, attachmentId),
-          eq(emails.id, emailId),
-          eq(emails.inboxId, inbox.id),
-        ))
-        .limit(1);
+    const attachment = await db
+      .select({
+        id: attachments.id,
+        filename: attachments.filename,
+        contentType: attachments.contentType,
+        storageKey: attachments.storageKey,
+      })
+      .from(attachments)
+      .innerJoin(emails, eq(attachments.emailId, emails.id))
+      .where(and(eq(attachments.id, attachmentId), eq(emails.id, emailId), eq(emails.inboxId, inbox.id)))
+      .limit(1);
 
-      const attachmentRecord = attachment[0];
-      if (!attachmentRecord) {
-        const emailRecord = await db.query.emails.findFirst({
-          where: and(eq(emails.id, emailId), eq(emails.inboxId, inbox.id)),
-        });
-
-        if (!emailRecord) {
-          return c.json(ErrorResponse.create({ error: "Email not found" }), 404);
-        }
-
-        return c.json(ErrorResponse.create({ error: "Attachment not found" }), 404);
-      }
-
-      const object = await c.env.STORAGE.get(attachmentRecord.storageKey);
-      if (!object?.body) {
-        return c.json(ErrorResponse.create({ error: "Attachment is missing from storage" }), 404);
-      }
-
-      const headers = new Headers();
-      headers.set("content-type", attachmentRecord.contentType ?? "application/octet-stream");
-      headers.set(
-        "content-disposition",
-        `attachment; filename="${(attachmentRecord.filename ?? "attachment.bin").replace(/\"/g, "")}"`,
-      );
-
-      return new Response(object.body, {
-        status: 200,
-        headers,
+    const attachmentRecord = attachment[0];
+    if (!attachmentRecord) {
+      const emailRecord = await db.query.emails.findFirst({
+        where: and(eq(emails.id, emailId), eq(emails.inboxId, inbox.id)),
       });
-    },
-  );
+
+      if (!emailRecord) {
+        return c.json(ErrorResponse.create({ error: "Email not found" }), 404);
+      }
+
+      return c.json(ErrorResponse.create({ error: "Attachment not found" }), 404);
+    }
+
+    const object = await c.env.STORAGE.get(attachmentRecord.storageKey);
+    if (!object?.body) {
+      return c.json(ErrorResponse.create({ error: "Attachment is missing from storage" }), 404);
+    }
+
+    const headers = new Headers();
+    headers.set("content-type", attachmentRecord.contentType ?? "application/octet-stream");
+    headers.set(
+      "content-disposition",
+      `attachment; filename="${(attachmentRecord.filename ?? "attachment.bin").replace(/\"/g, "")}"`,
+    );
+
+    return new Response(object.body, {
+      status: 200,
+      headers,
+    });
+  });
 }

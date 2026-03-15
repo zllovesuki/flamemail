@@ -52,11 +52,7 @@ function toArrayBuffer(value: string | ArrayBuffer) {
   return new TextEncoder().encode(value).buffer;
 }
 
-export async function handleIncomingEmail(
-  message: ForwardableEmailMessage,
-  env: Env,
-  ctx: ExecutionContext,
-) {
+export async function handleIncomingEmail(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext) {
   const recipient = parseRecipientAddress(message.to);
 
   if (!recipient) {
@@ -73,10 +69,7 @@ export async function handleIncomingEmail(
       where: eq(domains.domain, recipient.domain),
     }),
     db.query.inboxes.findFirst({
-      where: and(
-        eq(inboxes.localPart, recipient.canonicalLocalPart),
-        eq(inboxes.domain, recipient.domain),
-      ),
+      where: and(eq(inboxes.localPart, recipient.canonicalLocalPart), eq(inboxes.domain, recipient.domain)),
     }),
   ]);
 
@@ -110,10 +103,7 @@ export async function handleIncomingEmail(
     return;
   }
 
-  const quotaRows = await db
-    .select({ total: count() })
-    .from(emails)
-    .where(eq(emails.inboxId, inbox.id));
+  const quotaRows = await db.select({ total: count() }).from(emails).where(eq(emails.inboxId, inbox.id));
   const emailCount = quotaRows[0]?.total ?? 0;
 
   if (emailCount >= MAX_EMAILS_PER_INBOX) {
@@ -235,17 +225,19 @@ export async function handleIncomingEmail(
     });
 
     const stub = env.INBOX_WS.getByName(inbox.fullAddress);
-    ctx.waitUntil((async () => {
-      try {
-        await stub.notifyNewEmail(notification);
-      } catch (error) {
-        logger.warn("email_notification_failed", "Stored inbound email but websocket notification failed", {
-          address: inbox.fullAddress,
-          emailId,
-          ...errorContext(error),
-        });
-      }
-    })());
+    ctx.waitUntil(
+      (async () => {
+        try {
+          await stub.notifyNewEmail(notification);
+        } catch (error) {
+          logger.warn("email_notification_failed", "Stored inbound email but websocket notification failed", {
+            address: inbox.fullAddress,
+            emailId,
+            ...errorContext(error),
+          });
+        }
+      })(),
+    );
 
     logger.info("email_stored", "Stored inbound email", {
       address: inbox.fullAddress,

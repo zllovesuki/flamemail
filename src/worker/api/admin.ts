@@ -42,10 +42,13 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
       logger.warn("admin_login_disabled", "Blocked admin login because ADMIN_PASSWORD is not configured securely", {
         reason: configIssue,
       });
-      return c.json(ErrorResponse.create({
-        code: ADMIN_ACCESS_DISABLED_ERROR_CODE,
-        error: ADMIN_ACCESS_UNAVAILABLE_MESSAGE,
-      }), 503);
+      return c.json(
+        ErrorResponse.create({
+          code: ADMIN_ACCESS_DISABLED_ERROR_CODE,
+          error: ADMIN_ACCESS_UNAVAILABLE_MESSAGE,
+        }),
+        503,
+      );
     }
 
     let body;
@@ -98,15 +101,17 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
   app.get("/api/admin/domains", requireAdmin, async (c) => {
     const db = c.get("db");
     const items = await listDomainsForAdmin(c.env, db);
-    return c.json(AdminDomainsResponse.create({
-      domains: items.map((item) => ({
-        domain: item.domain,
-        isActive: item.isActive,
-        createdAt: item.createdAt.toISOString(),
-        inboxCount: item.inboxCount,
-        canDelete: item.canDelete,
-      })),
-    }));
+    return c.json(
+      AdminDomainsResponse.create({
+        domains: items.map((item) => ({
+          domain: item.domain,
+          isActive: item.isActive,
+          createdAt: item.createdAt.toISOString(),
+          inboxCount: item.inboxCount,
+          canDelete: item.canDelete,
+        })),
+      }),
+    );
   });
 
   app.get("/api/admin/temp-inboxes", requireAdmin, async (c) => {
@@ -114,19 +119,21 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     const hasEmails = c.req.query("hasEmails") === "true";
     const results = await listActiveTemporaryInboxesForAdmin(c.env, page, undefined, c.get("db"), hasEmails);
 
-    return c.json(AdminTempInboxPage.create({
-      page: results.page,
-      pageSize: results.pageSize,
-      total: results.total,
-      inboxes: results.items.map((item) => ({
-        address: item.address,
-        domain: item.domain,
-        createdAt: item.createdAt.toISOString(),
-        expiresAt: item.expiresAt?.toISOString() ?? null,
-        ttlHours: item.ttlHours,
-        emailCount: item.emailCount,
-      })),
-    }));
+    return c.json(
+      AdminTempInboxPage.create({
+        page: results.page,
+        pageSize: results.pageSize,
+        total: results.total,
+        inboxes: results.items.map((item) => ({
+          address: item.address,
+          domain: item.domain,
+          createdAt: item.createdAt.toISOString(),
+          expiresAt: item.expiresAt?.toISOString() ?? null,
+          ttlHours: item.ttlHours,
+          emailCount: item.emailCount,
+        })),
+      }),
+    );
   });
 
   app.post("/api/admin/domains", requireAdmin, async (c) => {
@@ -142,15 +149,18 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
       const db = c.get("db");
       await addDomain(c.env, body.domain, body.isActive ?? true, db);
       const items = await listDomainsForAdmin(c.env, db);
-      return c.json(AdminDomainsResponse.create({
-        domains: items.map((item) => ({
-          domain: item.domain,
-          isActive: item.isActive,
-          createdAt: item.createdAt.toISOString(),
-          inboxCount: item.inboxCount,
-          canDelete: item.canDelete,
-        })),
-      }), 201);
+      return c.json(
+        AdminDomainsResponse.create({
+          domains: items.map((item) => ({
+            domain: item.domain,
+            isActive: item.isActive,
+            createdAt: item.createdAt.toISOString(),
+            inboxCount: item.inboxCount,
+            canDelete: item.canDelete,
+          })),
+        }),
+        201,
+      );
     } catch (error) {
       logger.warn("domain_add_failed", "Could not add domain", {
         domain: body.domain,
@@ -225,14 +235,16 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
 
       const emailCountByInboxId = new Map(emailCounts.map((row) => [row.inboxId, row.emailCount]));
 
-      return c.json(AdminInboxesResponse.create({
-        inboxes: items.map((item) => ({
-          address: item.fullAddress,
-          domain: item.domain,
-          localPart: item.localPart,
-          emailCount: emailCountByInboxId.get(item.id) ?? 0,
-        })),
-      }));
+      return c.json(
+        AdminInboxesResponse.create({
+          inboxes: items.map((item) => ({
+            address: item.fullAddress,
+            domain: item.domain,
+            localPart: item.localPart,
+            emailCount: emailCountByInboxId.get(item.id) ?? 0,
+          })),
+        }),
+      );
     } catch (error) {
       logger.error("admin_inbox_list_failed", "Could not list permanent inboxes", errorContext(error));
       return c.json(ErrorResponse.create({ error: "Could not list permanent inboxes" }), 500);

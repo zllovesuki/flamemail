@@ -13,15 +13,20 @@ import type { AppBindings, AppContext } from "@/worker/types";
 const logger = createLogger("auth");
 
 function jsonError(message: string, status: number, code?: typeof ADMIN_ACCESS_DISABLED_ERROR_CODE) {
-  return new Response(JSON.stringify(ErrorResponse.create({
-    ...(code ? { code } : {}),
-    error: message,
-  })), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
+  return new Response(
+    JSON.stringify(
+      ErrorResponse.create({
+        ...(code ? { code } : {}),
+        error: message,
+      }),
+    ),
+    {
+      status,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+      },
     },
-  });
+  );
 }
 
 function adminAccessUnavailable(c: AppContext, reason: string) {

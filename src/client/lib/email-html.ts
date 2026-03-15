@@ -34,26 +34,28 @@ function stripQuotes(value: string) {
 
 function isUnsafeUrl(value: string) {
   const normalized = stripQuotes(value).trim().toLowerCase();
-  return normalized.startsWith("javascript:")
-    || normalized.startsWith("vbscript:")
-    || normalized.startsWith("file:")
-    || normalized.startsWith("data:text/html")
-    || normalized.startsWith("data:application/xhtml+xml");
+  return (
+    normalized.startsWith("javascript:") ||
+    normalized.startsWith("vbscript:") ||
+    normalized.startsWith("file:") ||
+    normalized.startsWith("data:text/html") ||
+    normalized.startsWith("data:application/xhtml+xml")
+  );
 }
 
 function isAllowedInlineResourceUrl(value: string) {
   const normalized = stripQuotes(value).trim().toLowerCase();
-  return normalized.startsWith("data:")
-    || normalized.startsWith("cid:")
-    || normalized.startsWith("about:")
-    || normalized.startsWith("blob:");
+  return (
+    normalized.startsWith("data:") ||
+    normalized.startsWith("cid:") ||
+    normalized.startsWith("about:") ||
+    normalized.startsWith("blob:")
+  );
 }
 
 function isRemoteResourceUrl(value: string) {
   const normalized = stripQuotes(value).trim().toLowerCase();
-  return normalized.startsWith("https://")
-    || normalized.startsWith("http://")
-    || normalized.startsWith("//");
+  return normalized.startsWith("https://") || normalized.startsWith("http://") || normalized.startsWith("//");
 }
 
 function isAllowedNavigationUrl(value: string) {
@@ -63,11 +65,13 @@ function isAllowedNavigationUrl(value: string) {
     return true;
   }
 
-  return normalized.startsWith("https://")
-    || normalized.startsWith("http://")
-    || normalized.startsWith("//")
-    || normalized.startsWith("mailto:")
-    || normalized.startsWith("tel:");
+  return (
+    normalized.startsWith("https://") ||
+    normalized.startsWith("http://") ||
+    normalized.startsWith("//") ||
+    normalized.startsWith("mailto:") ||
+    normalized.startsWith("tel:")
+  );
 }
 
 function buildRedirectHref(value: string) {
@@ -145,11 +149,7 @@ function createBlockedImagePlaceholder(doc: Document, altText: string | null) {
 }
 
 function escapeHtmlAttribute(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function sanitizeStyleSheet(value: string, allowRemoteContent: boolean) {

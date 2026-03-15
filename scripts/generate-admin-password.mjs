@@ -22,16 +22,10 @@ function shuffle(items) {
   return copy;
 }
 
-const requiredCharacters = [
-  pick(LOWERCASE),
-  pick(UPPERCASE),
-  pick(NUMBERS),
-  pick(SYMBOLS),
-];
+const requiredCharacters = [pick(LOWERCASE), pick(UPPERCASE), pick(NUMBERS), pick(SYMBOLS)];
 
-const remainingCharacters = Array.from(
-  { length: PASSWORD_LENGTH - requiredCharacters.length },
-  () => pick(ALL_CHARACTERS),
+const remainingCharacters = Array.from({ length: PASSWORD_LENGTH - requiredCharacters.length }, () =>
+  pick(ALL_CHARACTERS),
 );
 
 const password = shuffle([...requiredCharacters, ...remainingCharacters]).join("");

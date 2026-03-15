@@ -23,7 +23,9 @@ export function PermanentInboxList({ inboxes, loading }: PermanentInboxListProps
         </p>
       ) : null}
       {!loading && inboxes.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-500">No permanent inboxes yet. They are created automatically when a domain is added.</p>
+        <p className="mt-4 text-sm text-zinc-500">
+          No permanent inboxes yet. They are created automatically when a domain is added.
+        </p>
       ) : null}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
