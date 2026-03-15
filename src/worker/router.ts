@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { ErrorResponse } from "@/shared/contracts";
 import { D1_BOOKMARK_HEADER } from "@/shared/d1";
 import { registerAdminRoutes } from "@/worker/api/admin";
+import { registerConfigRoutes } from "@/worker/api/config";
 import { registerDomainRoutes } from "@/worker/api/domains";
 import { registerEmailRoutes } from "@/worker/api/emails";
 import { registerInboxRoutes } from "@/worker/api/inboxes";
@@ -13,6 +14,7 @@ export const app = new Hono<AppBindings>();
 const logger = createLogger("router");
 
 const REPLICA_FRIENDLY_ROUTES = [
+  /^\/api\/config$/,
   /^\/api\/domains$/,
   /^\/api\/inboxes\/[^/]+$/,
   /^\/api\/inboxes\/[^/]+\/emails$/,
@@ -47,6 +49,7 @@ app.use("*", async (c, next) => {
   }
 });
 
+registerConfigRoutes(app);
 registerDomainRoutes(app);
 registerInboxRoutes(app);
 registerEmailRoutes(app);

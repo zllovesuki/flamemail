@@ -19,6 +19,7 @@ import {
   extendTemporaryInbox,
   isAllowedTempMailboxTtl,
 } from "@/worker/services/inbox";
+import { verifyTurnstileToken } from "@/worker/services/turnstile";
 import type { AppBindings } from "@/worker/types";
 
 const logger = createLogger("inbox-api");
@@ -37,6 +38,23 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
 
     if (!domain) {
       return c.json(ErrorResponse.create({ error: "A domain is required" }), 400);
+    }
+
+    const turnstileResult = await verifyTurnstileToken(c.env, {
+      token: body.turnstileToken,
+      expectedAction: "create_inbox",
+      remoteIp: c.req.header("cf-connecting-ip"),
+      requestUrl: c.req.url,
+    });
+
+    if (!turnstileResult.ok) {
+      logger.warn("create_inbox_turnstile_failed", "Rejected inbox creation request", {
+        domain,
+        ttlHours: body.ttlHours,
+        reason: turnstileResult.reason,
+        errorCodes: turnstileResult.errorCodes,
+      });
+      return c.json(ErrorResponse.create({ error: turnstileResult.message }), turnstileResult.status);
     }
 
     try {

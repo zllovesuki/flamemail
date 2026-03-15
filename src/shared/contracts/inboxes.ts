@@ -1,5 +1,5 @@
 import { eg, type TypeFromCodec } from "@cloudflare/util-en-garde";
-import { NullableString } from "./common";
+import { NullableString, TurnstileToken } from "./common";
 
 export const TEMP_MAILBOX_TTL_HOURS = [24, 48, 72] as const;
 export type TempMailboxTtlHours = (typeof TEMP_MAILBOX_TTL_HOURS)[number];
@@ -16,6 +16,7 @@ const NullableTempMailboxTtlHours = eg.union([TempMailboxTtlHours, eg.null]);
 export const CreateInboxRequest = eg.object({
   domain: eg.string,
   ttlHours: TempMailboxTtlHours,
+  turnstileToken: TurnstileToken,
 });
 export type CreateInboxRequest = TypeFromCodec<typeof CreateInboxRequest>;
 

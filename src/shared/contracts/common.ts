@@ -10,6 +10,9 @@ export type NullableString = TypeFromCodec<typeof NullableString>;
 export const NullableNumber = eg.union([eg.number, eg.null]);
 export type NullableNumber = TypeFromCodec<typeof NullableNumber>;
 
+export const TurnstileToken = eg.string;
+export type TurnstileToken = TypeFromCodec<typeof TurnstileToken>;
+
 export const OkResponse = eg.object({
   ok: eg.boolean,
 });
@@ -35,3 +38,8 @@ export const DomainsResponse = eg.object({
   domains: eg.array(eg.string),
 });
 export type DomainsResponse = TypeFromCodec<typeof DomainsResponse>;
+
+export const PublicConfigResponse = eg.object({
+  turnstileSiteKey: eg.string,
+});
+export type PublicConfigResponse = TypeFromCodec<typeof PublicConfigResponse>;

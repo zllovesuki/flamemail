@@ -260,7 +260,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
             {preparedHtml.blockedRemoteContent && !allowRemoteContent ? (
               <button
                 type="button"
-                className="cursor-pointer text-xs font-medium text-amber-200 transition-colors hover:text-amber-100"
+                className="text-xs font-medium text-amber-200 transition-colors hover:text-amber-100"
                 onClick={() => setAllowRemoteContent(true)}
               >
                 Load remote content

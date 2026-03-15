@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Globe, Loader2, Sparkles } from "lucide-react";
+import { TurnstileWidget } from "@/client/components/TurnstileWidget";
 import {
   TEMP_MAILBOX_TTL_HOURS,
   createInbox,
   getErrorMessage,
+  isTurnstileError,
   listDomains,
   type InboxSession,
   type TempMailboxTtlHours,
@@ -28,6 +30,13 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
   const [domains, setDomains] = useState<string[]>([]);
   const [selectedDomain, setSelectedDomain] = useState("");
   const [ttlHours, setTtlHours] = useState<TempMailboxTtlHours>(TEMP_MAILBOX_TTL_HOURS[0]);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const handleTurnstileError = useCallback((turnstileError: string | null) => {
+    if (turnstileError) {
+      setError(null);
+    }
+  }, []);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,15 +79,25 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
       setError("No active domains are configured yet.");
       return;
     }
+    if (!turnstileToken) {
+      setError("Complete human verification to continue.");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
 
     try {
-      const session = await createInbox(selectedDomain, ttlHours);
+      const session = await createInbox(selectedDomain, ttlHours, turnstileToken);
+      setTurnstileToken(null);
+      setTurnstileResetKey((value) => value + 1);
       onCreated(session);
     } catch (nextError) {
       setError(getErrorMessage(nextError));
+      if (isTurnstileError(nextError)) {
+        setTurnstileToken(null);
+        setTurnstileResetKey((value) => value + 1);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -143,10 +162,17 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
           </div>
         </div>
 
+        <TurnstileWidget
+          action="create_inbox"
+          onError={handleTurnstileError}
+          onTokenChange={setTurnstileToken}
+          resetKey={turnstileResetKey}
+        />
+
         <button
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-flame-500 to-flame-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-flame-500/20 transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
           type="submit"
-          disabled={loading || submitting || !selectedDomain}
+          disabled={loading || submitting || !selectedDomain || !turnstileToken}
         >
           {submitting ? (
             <><Loader2 className="h-4 w-4 animate-spin" /> Creating...</>

@@ -30,6 +30,7 @@ import {
   listDomainsForAdmin,
   updateDomainStatus,
 } from "@/worker/services/inbox";
+import { verifyTurnstileToken } from "@/worker/services/turnstile";
 import type { AppBindings } from "@/worker/types";
 
 const logger = createLogger("admin-api");
@@ -52,7 +53,22 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     try {
       body = AdminLoginRequest.assertDecode(await c.req.json());
     } catch {
-      return c.json(ErrorResponse.create({ error: "Invalid admin password" }), 401);
+      return c.json(ErrorResponse.create({ error: "Invalid login request" }), 400);
+    }
+
+    const turnstileResult = await verifyTurnstileToken(c.env, {
+      token: body.turnstileToken,
+      expectedAction: "admin_login",
+      remoteIp: c.req.header("cf-connecting-ip"),
+      requestUrl: c.req.url,
+    });
+
+    if (!turnstileResult.ok) {
+      logger.warn("admin_login_turnstile_failed", "Rejected admin login attempt", {
+        reason: turnstileResult.reason,
+        errorCodes: turnstileResult.errorCodes,
+      });
+      return c.json(ErrorResponse.create({ error: turnstileResult.message }), turnstileResult.status);
     }
 
     const password = body.password;

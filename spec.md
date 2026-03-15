@@ -1,4 +1,4 @@
-# Flamemail: Temporary Email System on Cloudflare
+# flamemail: Temporary Email System on Cloudflare
 
 A serverless temporary email service running entirely on Cloudflare's platform. Users get disposable email addresses, receive emails in real-time via WebSocket, and view them in a React WebUI. Inbound plus aliases like `localpart+tag@domain.com` route into the base inbox while preserving the exact delivered recipient on each email.
 
@@ -51,6 +51,7 @@ The system runs as a single Cloudflare Worker project that handles:
 | Email Ingestion | Cloudflare Email Routing (catch-all) | Receives inbound email |
 | Email Parsing | `postal-mime` | MIME parsing within Worker |
 | API Router | Hono | Lightweight, Workers-native, middleware support |
+| Human Verification | Cloudflare Turnstile | Bot friction for inbox creation and admin login |
 | Validation | `@cloudflare/util-en-garde` | Runtime codec-based request/session validation |
 | Config format | `wrangler.jsonc` | Latest recommended config format |
 | Build tool | Vite + `@cloudflare/vite-plugin` | Frontend build, dev server |
@@ -77,7 +78,10 @@ Read replication remains optional at deployment time; if it is disabled, the sam
 
 ```
 User clicks "Create Inbox"
-  → POST /api/inboxes { domain: "example.com", ttlHours: 24 | 48 | 72 }
+  → Frontend fetches GET /api/config → receives { turnstileSiteKey }
+  → Frontend renders Turnstile widget and user completes the challenge
+  → POST /api/inboxes { domain: "example.com", ttlHours: 24 | 48 | 72, turnstileToken }
+  → Worker verifies the Turnstile token against Cloudflare siteverify with expected action = "create_inbox"
   → Worker generates random local part (e.g. "a7f2x9k3m1")
   → Insert into D1 `inboxes` table with expires_at = created_at + requested TTL
   → Generate access token, store in KV with matching TTL
@@ -164,6 +168,19 @@ Admin opens Admin page
   → This ordering intentionally prefers fail-closed access over perfect cross-store metadata consistency if the final D1 delete fails
 ```
 
+### 5c. Admin Login
+
+```
+Admin opens Admin page
+  → Frontend fetches GET /api/config → receives { turnstileSiteKey }
+  → Frontend renders Turnstile widget and user completes the challenge
+  → POST /api/admin/login { password, turnstileToken }
+  → Worker verifies the Turnstile token against Cloudflare siteverify with expected action = "admin_login"
+  → Worker validates ADMIN_PASSWORD policy and compares the provided password
+  → On success, generate admin session token in KV with 1h TTL
+  → Return { token }
+```
+
 ### 4. Cleanup (Scheduled)
 
 ```
@@ -201,6 +218,7 @@ flamemail/
 │   │   │   ├── EmailDetail.tsx            # Full email viewer (HTML sandboxed, raw source view for admin)
 │   │   │   ├── CreateInbox.tsx            # New inbox form (domain picker)
 │   │   │   ├── AdminLogin.tsx             # Admin auth form
+│   │   │   ├── TurnstileWidget.tsx        # Shared Turnstile loader/render wrapper
 │   │   │   ├── ExternalLinkRedirect.tsx   # Interstitial for outbound links in email content
 │   │   │   ├── Header.tsx
 │   │   │   ├── Footer.tsx
@@ -224,6 +242,7 @@ flamemail/
 │       ├── router.ts                      # Hono-based API routing
 │       ├── email-handler.ts               # email() processing logic
 │       ├── api/
+│       │   ├── config.ts                  # Public config bootstrap (Turnstile site key)
 │       │   ├── inboxes.ts                 # POST/GET/DELETE /api/inboxes
 │       │   ├── emails.ts                  # GET/DELETE /api/inboxes/:addr/emails
 │       │   ├── domains.ts                 # GET /api/domains
@@ -240,6 +259,7 @@ flamemail/
 │       ├── logger.ts                      # Minimal structured JSON logger
 │       ├── services/
 │       │   ├── storage.ts                 # R2 operations for raw mail, bodies, and attachments
+│       │   ├── turnstile.ts               # Cloudflare Turnstile verification
 │       │   └── inbox.ts                   # Inbox + domain lifecycle (create, extend, seed, cleanup)
 │       └── types.ts                       # Env bindings, validators, and shared record types
 ├── drizzle/                               # Generated Drizzle migrations + metadata
@@ -338,6 +358,18 @@ flamemail/
 > 2. Enable Email Routing
 > 3. Set catch-all to "Send to Worker" → `flamemail`
 > 4. MX records are configured automatically by Cloudflare Email Routing
+
+### Environment Bindings
+
+The Worker expects these runtime bindings:
+
+| Binding | Purpose |
+|---------|---------|
+| `ADMIN_PASSWORD` | Admin session password; must be present and strong or admin access fails closed |
+| `TURNSTILE_SITE_KEY` | Public Turnstile site key returned by `GET /api/config` so the SPA can render the widget |
+| `TURNSTILE_SECRET_KEY` | Secret key used by the Worker to call Turnstile `siteverify` |
+
+For local development, `.dev.vars.example` ships Cloudflare's published Turnstile test keys. They are suitable for local development and troubleshooting only; production should use a widget created for the deployed hostname.
 
 ### `drizzle.config.ts`
 
@@ -607,7 +639,8 @@ HTTP bookmark state is not stored in KV. The client keeps per-scope D1 bookmarks
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/api/domains` | None | List available domains |
-| `POST` | `/api/inboxes` | None | Create temp inbox → `{ address, token, ttlHours, expiresAt }` |
+| `GET` | `/api/config` | None | Return public runtime config for the SPA, currently `{ turnstileSiteKey }` |
+| `POST` | `/api/inboxes` | Turnstile | Create temp inbox → `{ address, token, ttlHours, expiresAt }` |
 | `GET` | `/api/inboxes/:address` | Token | Get inbox info |
 | `POST` | `/api/inboxes/:address/extend` | Token | Extend a temp inbox to 48h or 72h total lifetime |
 | `DELETE` | `/api/inboxes/:address` | Token | Delete inbox + all emails (owners can delete their inbox; admins can delete active temporary inboxes while inspecting them) |
@@ -617,7 +650,7 @@ HTTP bookmark state is not stored in KV. The client keeps per-scope D1 bookmarks
 | `DELETE` | `/api/inboxes/:address/emails/:id` | Token | Delete single email |
 | `GET` | `/api/inboxes/:address/emails/:id/attachments/:attId` | Token | Download attachment from R2 |
 | `GET` | `/api/inboxes/:address/emails/:id/raw` | Admin token scoped to inbox access | View stored raw RFC 822 source from R2 |
-| `POST` | `/api/admin/login` | Password | Admin login → `{ token }` |
+| `POST` | `/api/admin/login` | Password + Turnstile | Admin login → `{ token }` |
 | `GET` | `/api/admin/domains` | Admin token | List all domains with active status and inbox counts |
 | `GET` | `/api/admin/temp-inboxes?page=0` | Admin token | List active temporary inboxes with pagination and email counts |
 | `POST` | `/api/admin/domains` | Admin token | Add a new domain and optionally start it active |
@@ -635,12 +668,22 @@ HTTP bookmark state is not stored in KV. The client keeps per-scope D1 bookmarks
 
 ### Request/Response Examples
 
+**Public Config:**
+```
+GET /api/config
+
+→ 200 OK
+{
+  "turnstileSiteKey": "0x4AAAA..."
+}
+```
+
 **Create Inbox:**
 ```
 POST /api/inboxes
 Content-Type: application/json
 
-{ "domain": "example.com", "ttlHours": 24 }
+{ "domain": "example.com", "ttlHours": 24, "turnstileToken": "0.turnstile-token" }
 
 → 201 Created
 {
@@ -664,6 +707,19 @@ Content-Type: application/json
   "address": "a7f2x9k3m1@example.com",
   "ttlHours": 72,
   "expiresAt": "2026-03-17T12:00:00Z"
+}
+```
+
+**Admin Login:**
+```
+POST /api/admin/login
+Content-Type: application/json
+
+{ "password": "correct horse battery staple ...", "turnstileToken": "0.turnstile-token" }
+
+→ 200 OK
+{
+  "token": "tok_admin_abc123..."
 }
 ```
 
@@ -849,9 +905,12 @@ The frontend fetches `GET /api/domains` to present domain choices during inbox c
 | Temporary | Random access token issued at creation | KV with TTL matching inbox expiry | 24h, 48h, or 72h |
 | Permanent (admin) | Admin password → session token | KV with 1h TTL | 1h per session |
 
+Anonymous write flows use Turnstile in addition to session auth. The client obtains the public site key from `GET /api/config`, renders the widget, and submits the returned token with the form. The Worker verifies the token server-side with Cloudflare and rejects missing, invalid, mismatched-action, or hostname-mismatched tokens.
+
 ### Temporary Inboxes
 
 - Token generated as `nanoid` (uses `crypto.getRandomValues()` under the hood) on inbox creation, prefixed with `tok_`
+- `POST /api/inboxes` requires a Turnstile token with expected action `create_inbox` before any D1 or KV state is created
 - Stored in KV: key = `token:{uuid}`, value = `{ address, type: "user" }`
 - KV TTL matches inbox expiry (24h, 48h, or 72h depending on the selected lifetime)
 - Frontend stores token in `localStorage`
@@ -864,7 +923,8 @@ The frontend fetches `GET /api/domains` to present domain choices during inbox c
 - Admin password stored as a Worker secret (`ADMIN_PASSWORD` environment variable)
 - Admin login and admin APIs fail closed if `ADMIN_PASSWORD` is missing, blank, a known placeholder, or too weak
 - A valid `ADMIN_PASSWORD` must be at least 16 characters and include at least 3 of 4 character classes: lowercase, uppercase, number, and symbol
-- `POST /api/admin/login` with `{ password }` → validates and returns session token
+- `POST /api/admin/login` requires a Turnstile token with expected action `admin_login`
+- `POST /api/admin/login` with `{ password, turnstileToken }` → verifies Turnstile, validates the password, and returns a session token
 - Admin token stored in KV: `token:{uuid}` → `{ type: "admin" }`
 - Admin tokens grant access to all permanent inboxes and active temporary inboxes
 - Temporary inbox inspection from the admin UI allows viewing messages, attachments, and stored raw RFC 822 source, but admins cannot extend the mailbox or delete individual emails
@@ -872,7 +932,7 @@ The frontend fetches `GET /api/domains` to present domain choices during inbox c
 
 ### Auth Middleware
 
-All API endpoints except `GET /api/domains`, `POST /api/inboxes`, and `POST /api/admin/login` require a valid `Authorization: Bearer <token>` header. The middleware:
+All API endpoints except `GET /api/domains`, `GET /api/config`, `POST /api/inboxes`, and `POST /api/admin/login` require a valid `Authorization: Bearer <token>` header. The two public `POST` routes still require Turnstile verification before the Worker creates state or evaluates admin credentials. The middleware:
 
 1. Extracts token from header
 2. Looks up `token:{value}` in KV
@@ -885,7 +945,7 @@ Session and route access remain keyed to the canonical inbox address (for exampl
 
 ## Reserved / Permanent Inboxes
 
-Flamemail currently ships with a fixed reserved set of permanent inboxes that are seeded when a domain is added or re-enabled through the admin API:
+flamemail currently ships with a fixed reserved set of permanent inboxes that are seeded when a domain is added or re-enabled through the admin API:
 
 ```ts
 // Seeded by the admin domain-management flows
@@ -954,7 +1014,7 @@ Email HTML bodies are pre-processed through a client-side DOMParser-based saniti
 | **6. React Frontend** | Inbox creation with domain picker + TTL selection, email list, email detail viewer, WebSocket integration, admin login | UI |
 | **7. Cleanup & Admin** | `scheduled()` handler for TTL cleanup (D1 + R2), admin inbox management, domain pool management, permanent inbox seeding | Operations |
 | **8. Multi-Domain** | Domain pool management API, per-domain Email Routing setup documentation | Extension |
-| **9. Hardening** | Rate limiting, structured logging, input validation, error handling, observability, security headers, CORS | Polish |
+| **9. Hardening** | Turnstile, rate limiting, structured logging, input validation, error handling, observability, security headers, CORS | Polish |
 
 ---
 

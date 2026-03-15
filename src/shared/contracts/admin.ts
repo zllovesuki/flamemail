@@ -1,11 +1,12 @@
 import { eg, type TypeFromCodec } from "@cloudflare/util-en-garde";
-import { NullableString } from "./common";
+import { NullableString, TurnstileToken } from "./common";
 import { TempMailboxTtlHours } from "./inboxes";
 
 const NullableTempMailboxTtlHours = eg.union([TempMailboxTtlHours, eg.null]);
 
 export const AdminLoginRequest = eg.object({
   password: eg.string,
+  turnstileToken: TurnstileToken,
 });
 export type AdminLoginRequest = TypeFromCodec<typeof AdminLoginRequest>;
 

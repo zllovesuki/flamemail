@@ -2,12 +2,12 @@ import { SessionRecord, WebSocketTicketRecord } from "@/shared/contracts";
 
 const APP_CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob:",
   "font-src 'self' https://fonts.gstatic.com data:",
   "connect-src 'self' ws: wss:",
-  "frame-src 'self' blob:",
+  "frame-src 'self' blob: https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
   "frame-ancestors 'none'",

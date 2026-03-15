@@ -14,6 +14,14 @@ const shouldIgnoreWatchPath = (watchedPath: string) => {
     return false;
   }
 
+  if (relativePath === "index.html") {
+    return false;
+  }
+
+  if (relativePath === ".dev.vars") {
+    return false;
+  }
+
   return relativePath !== "src" && !relativePath.startsWith("src/");
 };
 

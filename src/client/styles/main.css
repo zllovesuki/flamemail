@@ -27,6 +27,13 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+button:not(:disabled),
+select,
+summary,
+[role="button"] {
+  cursor: pointer;
+}
+
 html {
   color-scheme: dark;
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { KeyRound, Loader2, LogOut, Shield } from "lucide-react";
+import { TurnstileWidget } from "@/client/components/TurnstileWidget";
 import { DomainManager } from "@/client/components/admin/DomainManager";
 import { PermanentInboxList } from "@/client/components/admin/PermanentInboxList";
 import { TempInboxList } from "@/client/components/admin/TempInboxList";
@@ -11,6 +12,7 @@ import {
   getErrorMessage,
   isAdminSessionError,
   isAdminAccessDisabledError,
+  isTurnstileError,
   listAdminDomains,
   listAdminInboxes,
   listAdminTempInboxes,
@@ -23,6 +25,13 @@ import {
 export function AdminLogin() {
   const [password, setPassword] = useState("");
   const [token, setToken] = useState<string | null>(() => getAdminToken());
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const handleTurnstileError = useCallback((turnstileError: string | null) => {
+    if (turnstileError) {
+      setError(null);
+    }
+  }, []);
   const [domains, setDomains] = useState<AdminDomain[]>([]);
   const [inboxes, setInboxes] = useState<AdminInbox[]>([]);
   const [tempInboxes, setTempInboxes] = useState<AdminTempInbox[]>([]);
@@ -103,21 +112,32 @@ export function AdminLogin() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!turnstileToken) {
+      setError("Complete human verification to continue.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const response = await adminLogin(password);
+      const response = await adminLogin(password, turnstileToken);
       setTempInboxPage(0);
       setAdminToken(response.token);
       setToken(response.token);
       setPassword("");
+      setTurnstileToken(null);
+      setTurnstileResetKey((value) => value + 1);
       toast.success("Admin session started");
     } catch (nextError) {
       if (isAdminAccessDisabledError(nextError)) {
         resetAdminState(getErrorMessage(nextError));
       } else {
         toast.error(getErrorMessage(nextError));
+      }
+      if (isTurnstileError(nextError)) {
+        setTurnstileToken(null);
+        setTurnstileResetKey((value) => value + 1);
       }
     } finally {
       setLoading(false);
@@ -198,10 +218,17 @@ export function AdminLogin() {
               />
             </label>
 
+            <TurnstileWidget
+              action="admin_login"
+              onError={handleTurnstileError}
+              onTokenChange={setTurnstileToken}
+              resetKey={turnstileResetKey}
+            />
+
             <button
               className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-flame-500 to-flame-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-flame-500/20 transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
               type="submit"
-              disabled={loading || password.length === 0}
+              disabled={loading || password.length === 0 || !turnstileToken}
             >
               {loading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

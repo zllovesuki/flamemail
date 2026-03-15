@@ -19,6 +19,7 @@ import {
   InboxSessionSummary,
   InboxSessionSummaryList,
   OkResponse,
+  PublicConfigResponse,
   TokenResponse,
   WebSocketTicketResponse,
   type AdminDomain,
@@ -56,6 +57,7 @@ const INBOX_TOKEN_KEY_PREFIX = "flamemail.inboxToken";
 const ADMIN_TOKEN_KEY = "flamemail.adminToken";
 const D1_BOOKMARKS_KEY = "flamemail.d1Bookmarks";
 const ADMIN_BOOKMARK_SCOPE = "admin";
+let publicConfigPromise: Promise<{ turnstileSiteKey: string }> | null = null;
 
 class ApiError extends Error {
   constructor(
@@ -227,11 +229,22 @@ export async function listDomains() {
   return response.domains;
 }
 
-export async function createInbox(domain: string, ttlHours: TempMailboxTtlHours) {
+export async function getPublicConfig() {
+  if (!publicConfigPromise) {
+    publicConfigPromise = request("/api/config", PublicConfigResponse).catch((error) => {
+      publicConfigPromise = null;
+      throw error;
+    });
+  }
+
+  return publicConfigPromise;
+}
+
+export async function createInbox(domain: string, ttlHours: TempMailboxTtlHours, turnstileToken: string) {
   let bookmark: string | null = null;
   const response = await request("/api/inboxes", CreateInboxResponse, {
     method: "POST",
-    body: encodeJsonBody(CreateInboxRequest, { domain, ttlHours }),
+    body: encodeJsonBody(CreateInboxRequest, { domain, ttlHours, turnstileToken }),
     onBookmark: (value) => {
       bookmark = value;
     },
@@ -325,10 +338,10 @@ export async function createWebSocketTicket(address: string, token: string) {
   });
 }
 
-export async function adminLogin(password: string) {
+export async function adminLogin(password: string, turnstileToken: string) {
   return request("/api/admin/login", TokenResponse, {
     method: "POST",
-    body: encodeJsonBody(AdminLoginRequest, { password }),
+    body: encodeJsonBody(AdminLoginRequest, { password, turnstileToken }),
   });
 }
 
@@ -598,4 +611,9 @@ export function getErrorMessage(error: unknown) {
   }
 
   return "Something went wrong";
+}
+
+export function isTurnstileError(error: unknown) {
+  return error instanceof ApiError
+    && /human verification/i.test(error.message);
 }

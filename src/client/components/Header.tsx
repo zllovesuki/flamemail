@@ -14,7 +14,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
             <Flame className="h-5 w-5 text-white" />
           </span>
           <span className="hidden sm:block">
-            <strong className="block text-sm font-semibold text-zinc-100">Flamemail</strong>
+            <strong className="block text-sm font-semibold text-zinc-100">flamemail</strong>
             <small className="block text-xs text-zinc-500">Disposable inboxes on Cloudflare</small>
           </span>
         </Link>
