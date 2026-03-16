@@ -1,14 +1,9 @@
 import { useState } from "react";
 import { Globe, Loader2, Plus, Power, PowerOff, Trash2 } from "lucide-react";
 import { toast } from "@/client/components/Toast";
-import {
-  addAdminDomain,
-  deleteAdminDomain,
-  getErrorMessage,
-  isAdminSessionError,
-  updateAdminDomain,
-  type AdminDomain,
-} from "@/client/lib/api";
+import { useAdminSessionGuard } from "@/client/hooks/useAdminSessionGuard";
+import { addAdminDomain, deleteAdminDomain, updateAdminDomain, type AdminDomain } from "@/client/lib/api";
+import { fullDate } from "@/client/lib/time";
 
 interface DomainManagerProps {
   token: string;
@@ -18,14 +13,11 @@ interface DomainManagerProps {
   onReload: () => Promise<void>;
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleString();
-}
-
 export function DomainManager({ token, domains, loading, onAdminSessionError, onReload }: DomainManagerProps) {
   const [newDomain, setNewDomain] = useState("");
   const [newDomainActive, setNewDomainActive] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const handleAdminError = useAdminSessionGuard(onAdminSessionError);
 
   const handleAdd = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -38,11 +30,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
       await onReload();
       toast.success(`Domain ${newDomain} added`);
     } catch (error) {
-      if (isAdminSessionError(error)) {
-        onAdminSessionError(getErrorMessage(error));
-      } else {
-        toast.error(getErrorMessage(error));
-      }
+      handleAdminError(error, toast.error);
     } finally {
       setBusy(null);
     }
@@ -56,11 +44,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
       await onReload();
       toast.success(`${domain.domain} ${domain.isActive ? "disabled" : "enabled"}`);
     } catch (error) {
-      if (isAdminSessionError(error)) {
-        onAdminSessionError(getErrorMessage(error));
-      } else {
-        toast.error(getErrorMessage(error));
-      }
+      handleAdminError(error, toast.error);
     } finally {
       setBusy(null);
     }
@@ -83,11 +67,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
       await onReload();
       toast.success(`${domain.domain} deleted`);
     } catch (error) {
-      if (isAdminSessionError(error)) {
-        onAdminSessionError(getErrorMessage(error));
-      } else {
-        toast.error(getErrorMessage(error));
-      }
+      handleAdminError(error, toast.error);
     } finally {
       setBusy(null);
     }
@@ -171,7 +151,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Added {formatDate(domain.createdAt)} · {domain.inboxCount} inbox
+                    Added {fullDate(domain.createdAt)} · {domain.inboxCount} inbox
                     {domain.inboxCount !== 1 ? "es" : ""}
                   </p>
                 </div>

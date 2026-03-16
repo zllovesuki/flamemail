@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Globe, Loader2, Sparkles } from "lucide-react";
 import { TurnstileWidget } from "@/client/components/TurnstileWidget";
+import { useTurnstileForm } from "@/client/hooks/useTurnstileForm";
 import {
   TEMP_MAILBOX_TTL_HOURS,
   createInbox,
@@ -30,16 +31,15 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
   const [domains, setDomains] = useState<string[]>([]);
   const [selectedDomain, setSelectedDomain] = useState("");
   const [ttlHours, setTtlHours] = useState<TempMailboxTtlHours>(TEMP_MAILBOX_TTL_HOURS[0]);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
-  const handleTurnstileError = useCallback((turnstileError: string | null) => {
-    if (turnstileError) {
-      setError(null);
-    }
-  }, []);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { turnstileToken, setTurnstileToken, turnstileResetKey, handleTurnstileError, resetTurnstile } =
+    useTurnstileForm({
+      onTurnstileError: () => {
+        setError(null);
+      },
+    });
 
   useEffect(() => {
     let active = true;
@@ -89,14 +89,12 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
 
     try {
       const session = await createInbox(selectedDomain, ttlHours, turnstileToken);
-      setTurnstileToken(null);
-      setTurnstileResetKey((value) => value + 1);
+      resetTurnstile();
       onCreated(session);
     } catch (nextError) {
       setError(getErrorMessage(nextError));
       if (isTurnstileError(nextError)) {
-        setTurnstileToken(null);
-        setTurnstileResetKey((value) => value + 1);
+        resetTurnstile();
       }
     } finally {
       setSubmitting(false);

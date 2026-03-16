@@ -1,10 +1,10 @@
 import { nanoid } from "nanoid";
 import PostalMime from "postal-mime";
 import { and, count, eq } from "drizzle-orm";
-import { NewEmailNotification } from "@/shared/contracts";
 import { createDb } from "@/worker/db";
 import { attachments, domains, emails, inboxes } from "@/worker/db/schema";
 import { createLogger, errorContext } from "@/worker/logger";
+import { toNewEmailNotification } from "@/worker/serializers/email";
 import {
   getAttachmentStorageKey,
   getBodyStorageKey,
@@ -210,18 +210,16 @@ export async function handleIncomingEmail(message: ForwardableEmailMessage, env:
       return;
     }
 
-    const notification = NewEmailNotification.create({
-      email: {
-        id: emailId,
-        recipientAddress: recipient.raw,
-        fromAddress: parsed.from?.address ?? message.from,
-        fromName: parsed.from?.name ?? null,
-        subject: parsed.subject ?? "(no subject)",
-        receivedAt: receivedAt.toISOString(),
-        isRead: false,
-        hasAttachments: attachmentRecords.length > 0,
-        sizeBytes: message.rawSize,
-      },
+    const notification = toNewEmailNotification({
+      id: emailId,
+      recipientAddress: recipient.raw,
+      fromAddress: parsed.from?.address ?? message.from,
+      fromName: parsed.from?.name ?? null,
+      subject: parsed.subject ?? "(no subject)",
+      receivedAt,
+      isRead: false,
+      hasAttachments: attachmentRecords.length > 0,
+      sizeBytes: message.rawSize,
     });
 
     const stub = env.INBOX_WS.getByName(inbox.fullAddress);

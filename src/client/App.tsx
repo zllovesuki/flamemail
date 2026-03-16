@@ -10,6 +10,7 @@ import { InboxView } from "@/client/components/InboxView";
 import { Footer } from "@/client/components/Footer";
 import { ToastContainer } from "@/client/components/Toast";
 import { loadInboxSessions, storeInboxSession, type InboxSession, type InboxSessionSummary } from "@/client/lib/api";
+import { fullDate } from "@/client/lib/time";
 
 function HomePage({
   sessions,
@@ -66,7 +67,7 @@ function HomePage({
                       </strong>
                       <span className="flex items-center gap-1 text-xs text-zinc-500">
                         <Clock className="h-3 w-3" />
-                        {alive ? `expires ${expires.toLocaleString()}` : "expired"}
+                        {alive ? `expires ${fullDate(session.expiresAt)}` : "expired"}
                       </span>
                     </div>
                   </Link>

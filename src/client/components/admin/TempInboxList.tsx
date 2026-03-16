@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Clock, Filter, Loader2, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getErrorMessage, isAdminSessionError, listAdminTempInboxes, type AdminTempInbox } from "@/client/lib/api";
+import { useAdminSessionGuard } from "@/client/hooks/useAdminSessionGuard";
+import { listAdminTempInboxes, type AdminTempInbox } from "@/client/lib/api";
+import { fullDate } from "@/client/lib/time";
 import { ADMIN_TEMP_INBOX_PAGE_SIZE } from "@/shared/contracts";
 
 interface TempInboxListProps {
   token: string;
   onSessionError: (message?: string) => void;
-}
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleString();
 }
 
 export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
@@ -21,6 +19,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
   const [hasEmails, setHasEmails] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleAdminError = useAdminSessionGuard(onSessionError);
 
   useEffect(() => {
     let active = true;
@@ -37,13 +36,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
         setPageSize(results.pageSize);
       } catch (fetchError) {
         if (!active) return;
-
-        if (isAdminSessionError(fetchError)) {
-          onSessionError(getErrorMessage(fetchError));
-          return;
-        }
-
-        setError(getErrorMessage(fetchError));
+        handleAdminError(fetchError, setError);
       } finally {
         if (active) setLoading(false);
       }
@@ -53,7 +46,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
     return () => {
       active = false;
     };
-  }, [token, page, hasEmails, onSessionError]);
+  }, [handleAdminError, hasEmails, page, token]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -124,8 +117,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
               <div className="min-w-0">
                 <strong className="block truncate text-sm font-semibold text-zinc-200">{inbox.address}</strong>
                 <p className="mt-1 text-xs text-zinc-500">
-                  Created {formatDate(inbox.createdAt)} · Expires{" "}
-                  {inbox.expiresAt ? formatDate(inbox.expiresAt) : "never"}
+                  Created {fullDate(inbox.createdAt)} · Expires {inbox.expiresAt ? fullDate(inbox.expiresAt) : "never"}
                 </p>
                 <p className="mt-1 text-xs text-zinc-600">
                   {inbox.domain} · {inbox.ttlHours ? `${inbox.ttlHours}h lifetime` : "temporary"} ·{" "}

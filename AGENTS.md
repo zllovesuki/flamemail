@@ -52,6 +52,12 @@ Cloudflare Email Routing catch-all rules are configured in the Cloudflare dashbo
 
 - `src/client/`
   - React SPA, UI components, hooks, and API helpers
+- `src/client/hooks/`
+  - React hooks for inbox state, route/session handling, countdowns, WebSocket subscriptions, and page actions
+- `src/client/lib/api/`
+  - Client HTTP helpers, `/api/config` bootstrap, D1 bookmark propagation, and local session storage
+- `src/client/lib/email-html/`
+  - HTML sanitization, style/attribute rewriting, and remote-resource policy for rendered email
 - `src/shared/contracts/`
   - Shared request/response/session codecs and types used by both client and worker
 - `src/worker/api/`
@@ -60,6 +66,8 @@ Cloudflare Email Routing catch-all rules are configured in the Cloudflare dashbo
   - Auth and inbox-access middleware for bearer tokens, admin gating, and expiry checks
 - `src/worker/services/`
   - Core business logic for inbox lifecycle, storage operations, and Turnstile verification
+- `src/worker/services/inbox/`
+  - Inbox lifecycle, cleanup, domain lookup, query helpers, session storage, and WebSocket ticket handling
 - `src/worker/email-handler.ts`
   - Inbound email parsing, plus-alias canonicalization, validation, persistence, and notification handoff
 - `src/worker/security.ts`
@@ -71,7 +79,7 @@ Cloudflare Email Routing catch-all rules are configured in the Cloudflare dashbo
 - `drizzle/`
   - Generated SQL migrations and Drizzle metadata
 - `scripts/`
-  - Local development helpers for D1 reset and test email sending
+  - Local development helpers for admin password generation, D1 reset, and test email sending
 - `public/`
   - Static public assets
 - `waf.md`
@@ -146,7 +154,7 @@ The bundled Turnstile keys are Cloudflare's testing keys, so local inbox creatio
 - Keep the Worker entry responsibilities in `src/worker/index.ts` limited to request/event routing and top-level coordination.
 - Put reusable business logic in `src/worker/services/` instead of route handlers when possible.
 - Preserve the current D1 session strategy in `src/worker/router.ts`: replica-friendly reads may use bookmarked or unconstrained sessions, while writes should continue to use primary sessions.
-- If an endpoint changes request or response shapes, update the matching codec in `src/shared/contracts/` and any client API helpers in `src/client/lib/api.ts`.
+- If an endpoint changes request or response shapes, update the matching codec in `src/shared/contracts/` and any client API helpers in `src/client/lib/api/`.
 - If a change affects Turnstile-backed flows or public frontend bootstrap config, update both `src/worker/api/config.ts` and the corresponding client consumers.
 - For new Worker-side custom request/response/session/data shapes, define them with `@cloudflare/util-en-garde` rather than standalone TypeScript-only types when practical.
 - Any change involving inbox lifecycle should account for consistency across:
@@ -158,10 +166,10 @@ The bundled Turnstile keys are Cloudflare's testing keys, so local inbox creatio
 ### Frontend changes
 
 - Add top-level routes in `src/client/App.tsx`.
-- Keep API-calling logic centralized in `src/client/lib/` when possible.
-- Preserve the real-time inbox flow, local session persistence behavior, and D1 bookmark propagation in `src/client/lib/api.ts`.
-- Treat `src/client/components/TurnstileWidget.tsx` and `/api/config` consumption as the authoritative path for human verification bootstrap.
-- Treat `src/client/lib/email-html.ts`, `src/client/components/EmailDetail.tsx`, and `src/client/components/ExternalLinkRedirect.tsx` as the authoritative path for HTML email safety and outbound-link handling.
+- Keep API-calling logic centralized in `src/client/lib/api/` when possible. `src/client/lib/api.ts` is a barrel re-export.
+- Preserve the real-time inbox flow, local session persistence behavior, and D1 bookmark propagation in `src/client/lib/api/`, especially `session-storage.ts` and `bookmarks.ts`.
+- Treat `src/client/components/TurnstileWidget.tsx` and `/api/config` consumption in `src/client/lib/api/public.ts` as the authoritative path for human verification bootstrap.
+- Treat `src/client/lib/email-html/`, `src/client/components/EmailDetail.tsx`, and `src/client/components/ExternalLinkRedirect.tsx` as the authoritative path for HTML email safety and outbound-link handling. `src/client/lib/email-html.ts` is a barrel re-export.
 
 ### Database changes
 
@@ -199,7 +207,7 @@ The bundled Turnstile keys are Cloudflare's testing keys, so local inbox creatio
 2. Update `src/shared/contracts/` for any request/response/session shape changes.
 3. Move non-trivial logic into `src/worker/services/` if needed.
 4. Confirm registration in `src/worker/router.ts`.
-5. Update any matching client helpers in `src/client/lib/api.ts`.
+5. Update any matching client helpers in `src/client/lib/api/`.
 6. Run `npm run check`.
 
 ### Changing persistence or inbox lifecycle
@@ -221,7 +229,7 @@ The bundled Turnstile keys are Cloudflare's testing keys, so local inbox creatio
 
 ### Changing UI behavior
 
-1. Update the relevant component or hook in `src/client/`.
+1. Update the relevant component or hook in `src/client/components/` or `src/client/hooks/`.
 2. Keep route definitions in `src/client/App.tsx` aligned.
 3. Verify the API contract still matches the worker responses.
 4. If the change touches email rendering or links, re-check sanitization, iframe sandboxing, and `/link` redirect behavior.
@@ -230,7 +238,7 @@ The bundled Turnstile keys are Cloudflare's testing keys, so local inbox creatio
 
 1. Update the relevant contract in `src/shared/contracts/` if `/api/config` or Turnstile request payloads change.
 2. Keep `src/worker/api/config.ts`, `src/worker/services/turnstile.ts`, and the affected API route in sync.
-3. Update the client bootstrap path in `src/client/lib/api.ts` and `src/client/components/TurnstileWidget.tsx`.
+3. Update the client bootstrap path in `src/client/lib/api/public.ts` and `src/client/components/TurnstileWidget.tsx`.
 4. Preserve fail-closed behavior when Turnstile keys are missing or verification fails.
 5. Re-test both inbox creation and admin login flows.
 
@@ -257,10 +265,14 @@ Start here when you need more context:
 - `waf.md` — optional WAF guidance for edge protection
 - `wrangler.jsonc` — runtime bindings and cron/routes
 - `package.json` — supported scripts
-- `src/client/lib/api.ts` — client API calls, local session persistence, and D1 bookmark handling
+- `src/client/lib/api/` — client API modules; `src/client/lib/api.ts` is a barrel re-export
+- `src/client/lib/api/public.ts` — `/api/config`, inbox creation, and admin login bootstrap
+- `src/client/lib/api/session-storage.ts` — local inbox/admin session persistence
+- `src/client/lib/api/bookmarks.ts` — D1 bookmark propagation and storage
 - `src/client/components/TurnstileWidget.tsx` — client-side Turnstile bootstrap and token handoff
-- `src/client/lib/email-html.ts` — HTML sanitization and external-link rewriting for email rendering
+- `src/client/lib/email-html/` — HTML sanitization and external-link rewriting for email rendering; `src/client/lib/email-html.ts` is a barrel re-export
 - `src/worker/email-handler.ts` — inbound email validation, parsing, and storage pipeline
+- `src/worker/services/inbox/` — inbox lifecycle, cleanup, query helpers, session/ticket storage, and domain-related operations
 - `src/worker/middleware/auth.ts` — auth, admin gating, and inbox access enforcement
 - `src/worker/security.ts` — security headers, admin password policy, and WebSocket origin validation
 - `src/worker/services/turnstile.ts` — Turnstile verification and fail-closed behavior

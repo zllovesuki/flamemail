@@ -2,28 +2,12 @@ import { AlertTriangle, ArrowUpRight, Copy, Shield } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "@/client/components/Toast";
-
-function parseTarget(rawTarget: string | null) {
-  if (!rawTarget) {
-    return null;
-  }
-
-  try {
-    const target = new URL(rawTarget, window.location.origin);
-    if (target.protocol !== "http:" && target.protocol !== "https:") {
-      return null;
-    }
-
-    return target;
-  } catch {
-    return null;
-  }
-}
+import { parseExternalLinkTarget } from "@/client/lib/external-link";
 
 export function ExternalLinkRedirect() {
   const [searchParams] = useSearchParams();
   const [copied, setCopied] = useState(false);
-  const target = useMemo(() => parseTarget(searchParams.get("url")), [searchParams]);
+  const target = useMemo(() => parseExternalLinkTarget(searchParams.get("url")), [searchParams]);
 
   const handleCopy = async () => {
     if (!target) {

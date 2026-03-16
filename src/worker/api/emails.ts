@@ -1,37 +1,12 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import type { Hono } from "hono";
-import { EMAIL_PAGE_SIZE, EmailDetail, EmailPage, ErrorResponse, OkResponse } from "@/shared/contracts";
+import { EMAIL_PAGE_SIZE, EmailPage, ErrorResponse, OkResponse } from "@/shared/contracts";
 import { attachments, emails } from "@/worker/db/schema";
 import { requireInboxAccess } from "@/worker/middleware/auth";
-import { deleteStorageForEmails, getRawStorageKey, readEmailBody } from "@/worker/services/storage";
+import { toEmailDetail, toEmailSummary } from "@/worker/serializers/email";
+import { deleteEmailWithStorage } from "@/worker/services/inbox";
+import { getRawStorageKey, readEmailBody } from "@/worker/services/storage";
 import type { AppBindings } from "@/worker/types";
-
-function toSummary(
-  email: Pick<
-    typeof emails.$inferSelect,
-    | "id"
-    | "recipientAddress"
-    | "fromAddress"
-    | "fromName"
-    | "subject"
-    | "receivedAt"
-    | "isRead"
-    | "hasAttachments"
-    | "sizeBytes"
-  >,
-) {
-  return {
-    id: email.id,
-    recipientAddress: email.recipientAddress,
-    fromAddress: email.fromAddress,
-    fromName: email.fromName,
-    subject: email.subject ?? "(no subject)",
-    receivedAt: email.receivedAt.toISOString(),
-    isRead: email.isRead,
-    hasAttachments: email.hasAttachments,
-    sizeBytes: email.sizeBytes ?? 0,
-  };
-}
 
 export function registerEmailRoutes(app: Hono<AppBindings>) {
   app.get("/api/inboxes/:address/emails", requireInboxAccess, async (c) => {
@@ -65,7 +40,7 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
 
     return c.json(
       EmailPage.create({
-        emails: emailRows.map(toSummary),
+        emails: emailRows.map(toEmailSummary),
         total,
         page: currentPage,
       }),
@@ -96,27 +71,7 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
       await db.update(emails).set({ isRead: true }).where(eq(emails.id, emailRecord.id));
     }
 
-    return c.json(
-      EmailDetail.create({
-        id: emailRecord.id,
-        recipientAddress: emailRecord.recipientAddress,
-        fromAddress: emailRecord.fromAddress,
-        fromName: emailRecord.fromName,
-        subject: emailRecord.subject ?? "(no subject)",
-        receivedAt: emailRecord.receivedAt.toISOString(),
-        isRead: shouldMarkRead ? true : emailRecord.isRead,
-        hasAttachments: emailRecord.hasAttachments,
-        sizeBytes: emailRecord.sizeBytes ?? 0,
-        text: body.text,
-        html: body.html,
-        attachments: emailRecord.attachments.map((attachment) => ({
-          id: attachment.id,
-          filename: attachment.filename,
-          contentType: attachment.contentType,
-          sizeBytes: attachment.sizeBytes ?? 0,
-        })),
-      }),
-    );
+    return c.json(toEmailDetail(emailRecord, body, shouldMarkRead ? true : emailRecord.isRead));
   });
 
   app.get("/api/inboxes/:address/emails/:id/raw", requireInboxAccess, async (c) => {
@@ -173,8 +128,7 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
       return c.json(ErrorResponse.create({ error: "Email not found" }), 404);
     }
 
-    await deleteStorageForEmails(c.env.STORAGE, [emailRecord.id]);
-    await db.delete(emails).where(eq(emails.id, emailRecord.id));
+    await deleteEmailWithStorage(c.env, emailRecord.id, db);
 
     return c.json(OkResponse.create({ ok: true }));
   });

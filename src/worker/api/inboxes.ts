@@ -5,19 +5,19 @@ import {
   ErrorResponse,
   ExtendInboxRequest,
   ExtendInboxResponse,
-  InboxInfo,
   OkResponse,
   WebSocketTicketResponse,
 } from "@/shared/contracts";
 import { createLogger, errorContext } from "@/worker/logger";
 import { getPublicErrorMessage } from "@/worker/security";
 import { requireInboxAccess } from "@/worker/middleware/auth";
+import { toInboxInfo } from "@/worker/serializers/inbox";
 import {
   createTemporaryInbox,
   createWebSocketTicket,
   deleteInbox,
   extendTemporaryInbox,
-  isAllowedTempMailboxTtl,
+  normalizeDomainName,
 } from "@/worker/services/inbox";
 import { verifyTurnstileToken } from "@/worker/services/turnstile";
 import type { AppBindings } from "@/worker/types";
@@ -34,7 +34,7 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
       return c.json(ErrorResponse.create({ error: "A domain is required" }), 400);
     }
 
-    const domain = body.domain.trim().toLowerCase();
+    const domain = normalizeDomainName(body.domain);
 
     if (!domain) {
       return c.json(ErrorResponse.create({ error: "A domain is required" }), 400);
@@ -85,18 +85,7 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
 
   app.get("/api/inboxes/:address", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
-    const ttlHours = inbox.expiresAt
-      ? Math.round((inbox.expiresAt.getTime() - inbox.createdAt.getTime()) / (60 * 60 * 1000))
-      : null;
-    return c.json(
-      InboxInfo.create({
-        address: inbox.fullAddress,
-        isPermanent: inbox.isPermanent,
-        ttlHours: ttlHours !== null && isAllowedTempMailboxTtl(ttlHours) ? ttlHours : null,
-        expiresAt: inbox.expiresAt?.toISOString() ?? null,
-        createdAt: inbox.createdAt.toISOString(),
-      }),
-    );
+    return c.json(toInboxInfo(inbox));
   });
 
   app.post("/api/inboxes/:address/extend", requireInboxAccess, async (c) => {

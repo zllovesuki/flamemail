@@ -5,12 +5,13 @@ import { DomainManager } from "@/client/components/admin/DomainManager";
 import { PermanentInboxList } from "@/client/components/admin/PermanentInboxList";
 import { TempInboxList } from "@/client/components/admin/TempInboxList";
 import { toast } from "@/client/components/Toast";
+import { useAdminSessionGuard } from "@/client/hooks/useAdminSessionGuard";
+import { useTurnstileForm } from "@/client/hooks/useTurnstileForm";
 import {
   adminLogin,
   clearAdminToken,
   getAdminToken,
   getErrorMessage,
-  isAdminSessionError,
   isAdminAccessDisabledError,
   isTurnstileError,
   listAdminDomains,
@@ -23,17 +24,16 @@ import {
 export function AdminLogin() {
   const [password, setPassword] = useState("");
   const [token, setToken] = useState<string | null>(() => getAdminToken());
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
-  const handleTurnstileError = useCallback((turnstileError: string | null) => {
-    if (turnstileError) {
-      setError(null);
-    }
-  }, []);
   const [domains, setDomains] = useState<AdminDomain[]>([]);
   const [inboxes, setInboxes] = useState<AdminInbox[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { turnstileToken, setTurnstileToken, turnstileResetKey, handleTurnstileError, resetTurnstile } =
+    useTurnstileForm({
+      onTurnstileError: () => {
+        setError(null);
+      },
+    });
 
   const resetAdminState = useCallback((message?: string) => {
     clearAdminToken();
@@ -46,6 +46,7 @@ export function AdminLogin() {
       toast.error(message);
     }
   }, []);
+  const handleAdminSessionError = useAdminSessionGuard(resetAdminState);
 
   const reload = useCallback(async (currentToken: string) => {
     const nextDomains = await listAdminDomains(currentToken);
@@ -75,12 +76,9 @@ export function AdminLogin() {
           return;
         }
 
-        if (isAdminSessionError(nextError)) {
-          resetAdminState(getErrorMessage(nextError));
+        if (handleAdminSessionError(nextError, setError)) {
           return;
         }
-
-        setError(getErrorMessage(nextError));
       } finally {
         if (active) {
           setLoading(false);
@@ -93,7 +91,7 @@ export function AdminLogin() {
     return () => {
       active = false;
     };
-  }, [reload, resetAdminState, token]);
+  }, [handleAdminSessionError, reload, token]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -110,8 +108,7 @@ export function AdminLogin() {
       setAdminToken(response.token);
       setToken(response.token);
       setPassword("");
-      setTurnstileToken(null);
-      setTurnstileResetKey((value) => value + 1);
+      resetTurnstile();
       toast.success("Admin session started");
     } catch (nextError) {
       if (isAdminAccessDisabledError(nextError)) {
@@ -120,8 +117,7 @@ export function AdminLogin() {
         toast.error(getErrorMessage(nextError));
       }
       if (isTurnstileError(nextError)) {
-        setTurnstileToken(null);
-        setTurnstileResetKey((value) => value + 1);
+        resetTurnstile();
       }
     } finally {
       setLoading(false);

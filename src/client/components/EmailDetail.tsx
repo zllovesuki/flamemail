@@ -9,6 +9,7 @@ import {
   type EmailAttachment,
   type EmailDetail as EmailDetailType,
 } from "@/client/lib/api";
+import { fullDate } from "@/client/lib/time";
 
 interface EmailDetailProps {
   address: string;
@@ -207,7 +208,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
           <span className="font-medium text-zinc-300">{email.fromName || email.fromAddress}</span>
           {email.fromName ? <span className="ml-1 text-zinc-500">&lt;{email.fromAddress}&gt;</span> : null}
           <span className="mx-1.5 text-zinc-600">&middot;</span>
-          {new Date(email.receivedAt).toLocaleString()}
+          {fullDate(email.receivedAt)}
           <span className="mx-1.5 text-zinc-600">&middot;</span>
           {formatSize(email.sizeBytes)}
         </p>

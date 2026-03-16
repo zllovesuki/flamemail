@@ -4,7 +4,6 @@ import {
   ADMIN_ACCESS_DISABLED_ERROR_CODE,
   AdminDomainRequest,
   AdminDomainStatusRequest,
-  AdminDomainsResponse,
   AdminInboxesResponse,
   AdminLoginRequest,
   AdminTempInboxPage,
@@ -15,6 +14,7 @@ import {
 import { emails, inboxes } from "@/worker/db/schema";
 import { createLogger, errorContext } from "@/worker/logger";
 import { requireAdmin } from "@/worker/middleware/auth";
+import { createAdminDomainsResponse } from "@/worker/serializers/admin";
 import {
   ADMIN_ACCESS_UNAVAILABLE_MESSAGE,
   constantTimeEqualStrings,
@@ -101,17 +101,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
   app.get("/api/admin/domains", requireAdmin, async (c) => {
     const db = c.get("db");
     const items = await listDomainsForAdmin(c.env, db);
-    return c.json(
-      AdminDomainsResponse.create({
-        domains: items.map((item) => ({
-          domain: item.domain,
-          isActive: item.isActive,
-          createdAt: item.createdAt.toISOString(),
-          inboxCount: item.inboxCount,
-          canDelete: item.canDelete,
-        })),
-      }),
-    );
+    return c.json(createAdminDomainsResponse(items));
   });
 
   app.get("/api/admin/temp-inboxes", requireAdmin, async (c) => {
@@ -149,18 +139,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
       const db = c.get("db");
       await addDomain(c.env, body.domain, body.isActive ?? true, db);
       const items = await listDomainsForAdmin(c.env, db);
-      return c.json(
-        AdminDomainsResponse.create({
-          domains: items.map((item) => ({
-            domain: item.domain,
-            isActive: item.isActive,
-            createdAt: item.createdAt.toISOString(),
-            inboxCount: item.inboxCount,
-            canDelete: item.canDelete,
-          })),
-        }),
-        201,
-      );
+      return c.json(createAdminDomainsResponse(items), 201);
     } catch (error) {
       logger.warn("domain_add_failed", "Could not add domain", {
         domain: body.domain,

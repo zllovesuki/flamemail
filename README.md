@@ -40,13 +40,14 @@ npm run dev
 
 That's it — open the URL printed in your terminal and create your first inbox.
 
-Local development uses the Cloudflare Turnstile test keys in `.dev.vars.example`, so inbox creation and admin login work out of the box after copying the file. Replace those with a real widget's keys before deploying a public instance.
+Local development uses the Cloudflare Turnstile test keys in `.dev.vars.example`, so inbox creation works out of the box after copying the file. To use the admin panel locally, replace the placeholder `ADMIN_PASSWORD` in `.dev.vars` with a strong value, for example via `npm run admin:password`. Replace the Turnstile keys with a real widget's keys before deploying a public instance.
 
 ### Handy Scripts
 
 | Command                  | What it does                              |
 | ------------------------ | ----------------------------------------- |
 | `npm run dev`            | Start the local dev server                |
+| `npm run admin:password` | Generate a strong local admin password    |
 | `npm run email:local`    | Send a test email to the local worker     |
 | `npm run db:local:reset` | Wipe and re-migrate the local D1 database |
 | `npm run check`          | Type-check the entire project             |
