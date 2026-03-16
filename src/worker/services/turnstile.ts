@@ -42,6 +42,10 @@ interface VerifyTurnstileTokenOptions {
   token: string;
 }
 
+function isLoopbackHostname(hostname: string) {
+  return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1" || hostname === "[::1]";
+}
+
 export async function verifyTurnstileToken(
   env: Env,
   options: VerifyTurnstileTokenOptions,
@@ -66,6 +70,21 @@ export async function verifyTurnstileToken(
       message: TURNSTILE_REQUIRED_MESSAGE,
       reason: "missing_token",
       status: 400,
+    };
+  }
+
+  const requestHostname = new URL(options.requestUrl).hostname;
+  if (TURNSTILE_TEST_SECRET_KEYS.has(secret) && isLoopbackHostname(requestHostname)) {
+    return {
+      ok: true,
+      response: {
+        success: true,
+        action: "test",
+        hostname: requestHostname,
+        metadata: {
+          result_with_testing_key: true,
+        },
+      },
     };
   }
 

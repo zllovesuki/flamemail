@@ -3,4 +3,5 @@ dist/
 .wrangler/
 .dev.vars
 coverage/
+test-results/
 *.log

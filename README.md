@@ -51,7 +51,7 @@ Local development uses the Cloudflare Turnstile test keys in `.dev.vars.example`
 | `npm run email:local`    | Send a test email to the local worker     |
 | `npm run db:local:reset` | Wipe and re-migrate the local D1 database |
 | `npm run check`          | Type-check the entire project             |
-| `npm run build`          | Build the frontend for production         |
+| `npm run build`          | Build the app for production              |
 
 ---
 
@@ -87,23 +87,24 @@ Inbound Email
 
 ## 🌐 Deploying to Production
 
-Click the **Deploy to Cloudflare Workers** button at the top, or deploy manually:
+Click the **Deploy to Cloudflare Workers** button at the top, or deploy manually with the repository script:
 
 ```bash
-npm run db:migrate
-npx wrangler deploy
+npm run deploy
 ```
+
+This applies remote D1 migrations and then runs `wrangler deploy`.
 
 ### Prerequisites
 
-1. A **Cloudflare account** with Workers, D1, R2, and KV enabled.
+1. A **Cloudflare account** with Workers, Durable Objects, D1, R2, and KV enabled.
 2. **[Email Routing](https://developers.cloudflare.com/email-routing/)** enabled for each domain, with a catch-all rule pointing to this worker.
 3. An **`ADMIN_PASSWORD`** secret:
    ```bash
    wrangler secret put ADMIN_PASSWORD
    ```
    Must be ≥ 16 characters with at least 3 of 4 character classes (lowercase, uppercase, digit, symbol). Admin APIs fail closed if this is missing or too weak.
-4. A **Cloudflare Turnstile widget** for your deployed hostname, plus Worker bindings for:
+4. A **Cloudflare Turnstile widget** for your deployed hostname, plus Worker environment values for:
    - `TURNSTILE_SITE_KEY` — public site key returned by `/api/config`
    - `TURNSTILE_SECRET_KEY` — secret used by the Worker to verify challenge responses
 
