@@ -10,7 +10,7 @@ const fetchMock = vi.fn<typeof fetch>();
 const requestOptions = {
   expectedAction: "create_inbox",
   remoteIp: "203.0.113.10",
-  requestUrl: "https://flamemail.devbin.tools/api/inboxes",
+  requestUrl: "https://flamemail.devbin.tools/api/public/inboxes",
   token: "turnstile-token",
 };
 
@@ -68,7 +68,7 @@ describe("verifyTurnstileToken", () => {
   it("accepts loopback requests with official testing secrets without siteverify", async () => {
     const result = await verifyTurnstileToken(makeEnv("1x0000000000000000000000000000000AA"), {
       ...requestOptions,
-      requestUrl: "http://127.0.0.1:4173/api/inboxes",
+      requestUrl: "http://127.0.0.1:4173/api/public/inboxes",
     });
 
     expect(result).toEqual({

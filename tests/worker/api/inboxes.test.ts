@@ -14,7 +14,7 @@ function jsonResponse(payload: unknown) {
   });
 }
 
-describe("worker api /api/inboxes", () => {
+describe("worker api /api/public/inboxes and /api/protected/inboxes", () => {
   beforeEach(async () => {
     fetchMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
@@ -35,7 +35,7 @@ describe("worker api /api/inboxes", () => {
       }),
     );
 
-    const response = await apiRequest("/api/inboxes", {
+    const response = await apiRequest("/api/public/inboxes", {
       body: {
         domain: "mail.test",
         ttlHours: 24,
@@ -67,7 +67,7 @@ describe("worker api /api/inboxes", () => {
   });
 
   it("rejects invalid create inbox request bodies", async () => {
-    const response = await apiRequest("/api/inboxes", {
+    const response = await apiRequest("/api/public/inboxes", {
       body: {
         ttlHours: 24,
         turnstileToken: "turnstile-token",
@@ -89,7 +89,7 @@ describe("worker api /api/inboxes", () => {
       }),
     );
 
-    const response = await apiRequest("/api/inboxes", {
+    const response = await apiRequest("/api/public/inboxes", {
       body: {
         domain: "mail.test",
         ttlHours: 24,
@@ -111,7 +111,7 @@ describe("worker api /api/inboxes", () => {
       }),
     );
 
-    const response = await apiRequest("/api/inboxes", {
+    const response = await apiRequest("/api/public/inboxes", {
       body: {
         domain: "missing.test",
         ttlHours: 24,
@@ -131,7 +131,7 @@ describe("worker api /api/inboxes", () => {
       address: "reader@mail.test",
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}`);
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`);
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
@@ -149,7 +149,7 @@ describe("worker api /api/inboxes", () => {
       address: "someone-else@mail.test",
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
       token,
     });
 
@@ -165,7 +165,7 @@ describe("worker api /api/inboxes", () => {
       address: "reader@mail.test",
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
       token: "tok_missing",
     });
 
@@ -180,7 +180,7 @@ describe("worker api /api/inboxes", () => {
       type: "admin",
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent("missing@mail.test")}`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent("missing@mail.test")}`, {
       token,
     });
 
@@ -202,7 +202,7 @@ describe("worker api /api/inboxes", () => {
       address: inbox.fullAddress,
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
       token,
     });
 
@@ -224,7 +224,7 @@ describe("worker api /api/inboxes", () => {
       address: inbox.fullAddress,
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/extend`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/extend`, {
       method: "POST",
       token,
       body: {
@@ -264,7 +264,7 @@ describe("worker api /api/inboxes", () => {
       type: "admin",
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/extend`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/extend`, {
       method: "POST",
       token,
       body: {
@@ -288,7 +288,7 @@ describe("worker api /api/inboxes", () => {
       address: inbox.fullAddress,
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/ws-ticket`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/ws-ticket`, {
       method: "POST",
       token,
     });
@@ -319,7 +319,7 @@ describe("worker api /api/inboxes", () => {
       address: inbox.fullAddress,
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
       method: "DELETE",
       token,
     });
@@ -345,7 +345,7 @@ describe("worker api /api/inboxes", () => {
       type: "admin",
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
       method: "DELETE",
       token,
     });

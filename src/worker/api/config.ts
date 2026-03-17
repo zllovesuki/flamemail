@@ -3,7 +3,7 @@ import { ErrorResponse, PublicConfigResponse } from "@/shared/contracts";
 import type { AppBindings } from "@/worker/types";
 
 export function registerConfigRoutes(app: Hono<AppBindings>) {
-  app.get("/api/config", async (c) => {
+  app.get("/api/public/config", async (c) => {
     const siteKey = c.env.TURNSTILE_SITE_KEY?.trim();
 
     if (!siteKey) {

@@ -22,7 +22,7 @@ Use this file to keep changes safe and repo-appropriate.
 ### Main runtime flow
 
 1. Cloudflare Email Routing delivers inbound mail to `email()`.
-2. Inbox creation and admin login fetch `/api/config`, render Turnstile on the client, and fail closed if verification or configuration is unavailable.
+2. Inbox creation and admin login fetch `/api/public/config`, render Turnstile on the client, and fail closed if verification or configuration is unavailable.
 3. The Worker canonicalizes plus aliases for inbox lookup, stores metadata in D1, stores bodies and attachments in R2, and rejects invalid, expired, oversized, or over-quota mail.
 4. Each email record preserves the exact delivered recipient address, even when plus aliases route to the same base inbox.
 5. The Worker notifies the `InboxWebSocket` Durable Object.
@@ -43,7 +43,7 @@ Configured in `wrangler.jsonc`:
 Configured outside `wrangler.jsonc`, but required for auth and human-verification flows:
 
 - `ADMIN_PASSWORD`: admin login secret; admin routes fail closed if missing or insecure
-- `TURNSTILE_SITE_KEY`: public site key returned by `/api/config`
+- `TURNSTILE_SITE_KEY`: public site key returned by `/api/public/config`
 - `TURNSTILE_SECRET_KEY`: secret used by the Worker to verify Turnstile responses
 
 Cloudflare Email Routing catch-all rules are configured in the Cloudflare dashboard, not in code.
@@ -51,7 +51,7 @@ Cloudflare Email Routing catch-all rules are configured in the Cloudflare dashbo
 ## Important Directories
 
 - `src/client/` — SPA, components, hooks, and helpers
-- `src/client/lib/api/` — client HTTP helpers, `/api/config`, bookmarks, and session storage
+- `src/client/lib/api/` — client HTTP helpers, `/api/public/config`, bookmarks, and session storage
 - `src/client/lib/email-html/` — HTML sanitization, rewriting, and remote-content policy
 - `src/shared/contracts/` — shared codecs and types
 - `src/worker/api/` — Hono route registration for config, inboxes, emails, domains, and admin APIs

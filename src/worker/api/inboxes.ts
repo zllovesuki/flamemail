@@ -25,7 +25,7 @@ import type { AppBindings } from "@/worker/types";
 const logger = createLogger("inbox-api");
 
 export function registerInboxRoutes(app: Hono<AppBindings>) {
-  app.post("/api/inboxes", async (c) => {
+  app.post("/api/public/inboxes", async (c) => {
     let body;
 
     try {
@@ -83,12 +83,12 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
     }
   });
 
-  app.get("/api/inboxes/:address", requireInboxAccess, async (c) => {
+  app.get("/api/protected/inboxes/:address", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
     return c.json(toInboxInfo(inbox));
   });
 
-  app.post("/api/inboxes/:address/extend", requireInboxAccess, async (c) => {
+  app.post("/api/protected/inboxes/:address/extend", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
     const session = c.get("session");
     const token = c.get("token");
@@ -124,7 +124,7 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
     }
   });
 
-  app.post("/api/inboxes/:address/ws-ticket", requireInboxAccess, async (c) => {
+  app.post("/api/protected/inboxes/:address/ws-ticket", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
     const session = c.get("session");
     const ticket = await createWebSocketTicket(c.env, inbox.fullAddress, session);
@@ -132,7 +132,7 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
     return c.json(WebSocketTicketResponse.create({ ticket }));
   });
 
-  app.delete("/api/inboxes/:address", requireInboxAccess, async (c) => {
+  app.delete("/api/protected/inboxes/:address", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
 
     try {

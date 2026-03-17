@@ -18,30 +18,38 @@ export async function listEmails(
     params.set("includeTotal", "1");
   }
 
-  return request(`/api/inboxes/${encodeURIComponent(address)}/emails?${params.toString()}`, EmailPage, {
+  return request(`/api/protected/inboxes/${encodeURIComponent(address)}/emails?${params.toString()}`, EmailPage, {
     token,
     bookmarkScope: getInboxBookmarkScope(address),
   });
 }
 
 export async function getEmail(address: string, emailId: string, token: string) {
-  return request(`/api/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`, EmailDetail, {
-    token,
-    bookmarkScope: getInboxBookmarkScope(address),
-  });
+  return request(
+    `/api/protected/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`,
+    EmailDetail,
+    {
+      token,
+      bookmarkScope: getInboxBookmarkScope(address),
+    },
+  );
 }
 
 export async function deleteEmail(address: string, emailId: string, token: string) {
-  return request(`/api/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`, OkResponse, {
-    method: "DELETE",
-    token,
-    bookmarkScope: getInboxBookmarkScope(address),
-  });
+  return request(
+    `/api/protected/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`,
+    OkResponse,
+    {
+      method: "DELETE",
+      token,
+      bookmarkScope: getInboxBookmarkScope(address),
+    },
+  );
 }
 
 export async function downloadAttachment(address: string, emailId: string, attachmentId: string, token: string) {
   const response = await fetchWithSession(
-    `/api/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}/attachments/${encodeURIComponent(attachmentId)}`,
+    `/api/protected/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}/attachments/${encodeURIComponent(attachmentId)}`,
     {
       token,
       bookmarkScope: getInboxBookmarkScope(address),
@@ -58,7 +66,7 @@ export async function downloadAttachment(address: string, emailId: string, attac
 
 export async function getRawEmailSource(address: string, emailId: string, token: string) {
   const response = await fetchWithSession(
-    `/api/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}/raw`,
+    `/api/protected/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}/raw`,
     {
       token,
       bookmarkScope: getInboxBookmarkScope(address),

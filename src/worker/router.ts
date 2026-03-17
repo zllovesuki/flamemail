@@ -14,15 +14,15 @@ export const app = new Hono<AppBindings>();
 const logger = createLogger("router");
 
 const REPLICA_FRIENDLY_ROUTES = [
-  /^\/api\/config$/,
-  /^\/api\/domains$/,
-  /^\/api\/inboxes\/[^/]+$/,
-  /^\/api\/inboxes\/[^/]+\/emails$/,
-  /^\/api\/inboxes\/[^/]+\/emails\/[^/]+\/raw$/,
-  /^\/api\/inboxes\/[^/]+\/emails\/[^/]+\/attachments\/[^/]+$/,
-  /^\/api\/admin\/domains$/,
-  /^\/api\/admin\/inboxes$/,
-  /^\/api\/admin\/temp-inboxes$/,
+  /^\/api\/public\/config$/,
+  /^\/api\/public\/domains$/,
+  /^\/api\/protected\/inboxes\/[^/]+$/,
+  /^\/api\/protected\/inboxes\/[^/]+\/emails$/,
+  /^\/api\/protected\/inboxes\/[^/]+\/emails\/[^/]+\/raw$/,
+  /^\/api\/protected\/inboxes\/[^/]+\/emails\/[^/]+\/attachments\/[^/]+$/,
+  /^\/api\/protected\/admin\/domains$/,
+  /^\/api\/protected\/admin\/inboxes$/,
+  /^\/api\/protected\/admin\/temp-inboxes$/,
 ];
 
 function selectSessionConstraint(method: string, path: string): D1SessionConstraint {

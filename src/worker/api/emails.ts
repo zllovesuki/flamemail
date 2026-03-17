@@ -9,7 +9,7 @@ import { getRawStorageKey, readEmailBody } from "@/worker/services/storage";
 import type { AppBindings } from "@/worker/types";
 
 export function registerEmailRoutes(app: Hono<AppBindings>) {
-  app.get("/api/inboxes/:address/emails", requireInboxAccess, async (c) => {
+  app.get("/api/protected/inboxes/:address/emails", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
     const db = c.get("db");
     const page = Number.parseInt(c.req.query("page") ?? "0", 10);
@@ -47,7 +47,7 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
     );
   });
 
-  app.get("/api/inboxes/:address/emails/:id", requireInboxAccess, async (c) => {
+  app.get("/api/protected/inboxes/:address/emails/:id", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
     const session = c.get("session");
     const db = c.get("db");
@@ -74,7 +74,7 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
     return c.json(toEmailDetail(emailRecord, body, shouldMarkRead ? true : emailRecord.isRead));
   });
 
-  app.get("/api/inboxes/:address/emails/:id/raw", requireInboxAccess, async (c) => {
+  app.get("/api/protected/inboxes/:address/emails/:id/raw", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
     const session = c.get("session");
     const db = c.get("db");
@@ -107,7 +107,7 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
     });
   });
 
-  app.delete("/api/inboxes/:address/emails/:id", requireInboxAccess, async (c) => {
+  app.delete("/api/protected/inboxes/:address/emails/:id", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
     const session = c.get("session");
     const db = c.get("db");
@@ -133,7 +133,7 @@ export function registerEmailRoutes(app: Hono<AppBindings>) {
     return c.json(OkResponse.create({ ok: true }));
   });
 
-  app.get("/api/inboxes/:address/emails/:id/attachments/:attId", requireInboxAccess, async (c) => {
+  app.get("/api/protected/inboxes/:address/emails/:id/attachments/:attId", requireInboxAccess, async (c) => {
     const inbox = c.get("inbox");
     const db = c.get("db");
     const emailId = c.req.param("id");

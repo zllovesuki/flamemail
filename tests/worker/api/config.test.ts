@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { apiRequest, resetWorkerState } from "./helpers";
 
-describe("worker api /api/config", () => {
+describe("worker api /api/public/config", () => {
   beforeEach(async () => {
     await resetWorkerState();
   });
 
   it("returns the turnstile site key when configured", async () => {
-    const response = await apiRequest("/api/config");
+    const response = await apiRequest("/api/public/config");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
@@ -16,7 +16,7 @@ describe("worker api /api/config", () => {
   });
 
   it("returns 503 when the turnstile site key is missing", async () => {
-    const response = await apiRequest("/api/config", {
+    const response = await apiRequest("/api/public/config", {
       envOverrides: {
         TURNSTILE_SITE_KEY: "",
       },

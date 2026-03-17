@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { apiRequest, resetWorkerState, seedDomain } from "./helpers";
 
-describe("worker api /api/domains", () => {
+describe("worker api /api/public/domains", () => {
   beforeEach(async () => {
     await resetWorkerState();
   });
@@ -11,7 +11,7 @@ describe("worker api /api/domains", () => {
     await seedDomain("inactive.test", false);
     await seedDomain("alpha.test", true);
 
-    const response = await apiRequest("/api/domains");
+    const response = await apiRequest("/api/public/domains");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
@@ -22,7 +22,7 @@ describe("worker api /api/domains", () => {
   it("returns an empty list when there are no active domains", async () => {
     await seedDomain("inactive.test", false);
 
-    const response = await apiRequest("/api/domains");
+    const response = await apiRequest("/api/public/domains");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({

@@ -51,7 +51,7 @@ describe("withSecurityHeaders", () => {
   });
 
   it("sets no-store headers for API responses without adding CSP", () => {
-    const request = new Request("https://flamemail.devbin.tools/api/config");
+    const request = new Request("https://flamemail.devbin.tools/api/public/config");
     const response = new Response(JSON.stringify({ ok: true }), {
       headers: {
         "content-type": "application/json",

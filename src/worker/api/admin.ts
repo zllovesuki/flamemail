@@ -36,7 +36,7 @@ import type { AppBindings } from "@/worker/types";
 const logger = createLogger("admin-api");
 
 export function registerAdminRoutes(app: Hono<AppBindings>) {
-  app.post("/api/admin/login", async (c) => {
+  app.post("/api/public/admin/login", async (c) => {
     const configIssue = getAdminPasswordConfigurationIssue(c.env.ADMIN_PASSWORD);
     if (configIssue) {
       logger.warn("admin_login_disabled", "Blocked admin login because ADMIN_PASSWORD is not configured securely", {
@@ -98,13 +98,13 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     return c.json(TokenResponse.create({ token }));
   });
 
-  app.get("/api/admin/domains", requireAdmin, async (c) => {
+  app.get("/api/protected/admin/domains", requireAdmin, async (c) => {
     const db = c.get("db");
     const items = await listDomainsForAdmin(c.env, db);
     return c.json(createAdminDomainsResponse(items));
   });
 
-  app.get("/api/admin/temp-inboxes", requireAdmin, async (c) => {
+  app.get("/api/protected/admin/temp-inboxes", requireAdmin, async (c) => {
     const page = Number.parseInt(c.req.query("page") ?? "0", 10);
     const hasEmails = c.req.query("hasEmails") === "true";
     const results = await listActiveTemporaryInboxesForAdmin(c.env, page, undefined, c.get("db"), hasEmails);
@@ -126,7 +126,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     );
   });
 
-  app.post("/api/admin/domains", requireAdmin, async (c) => {
+  app.post("/api/protected/admin/domains", requireAdmin, async (c) => {
     let body;
 
     try {
@@ -149,7 +149,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     }
   });
 
-  app.patch("/api/admin/domains/:domain", requireAdmin, async (c) => {
+  app.patch("/api/protected/admin/domains/:domain", requireAdmin, async (c) => {
     let body;
 
     try {
@@ -173,7 +173,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     }
   });
 
-  app.delete("/api/admin/domains/:domain", requireAdmin, async (c) => {
+  app.delete("/api/protected/admin/domains/:domain", requireAdmin, async (c) => {
     const domainName = decodeURIComponent(c.req.param("domain"));
 
     try {
@@ -190,7 +190,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     }
   });
 
-  app.get("/api/admin/inboxes", requireAdmin, async (c) => {
+  app.get("/api/protected/admin/inboxes", requireAdmin, async (c) => {
     const db = c.get("db");
 
     try {

@@ -14,7 +14,7 @@ function jsonResponse(payload: unknown) {
   });
 }
 
-describe("worker api /api/admin", () => {
+describe("worker api /api/public/admin and /api/protected/admin", () => {
   beforeEach(async () => {
     fetchMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
@@ -26,7 +26,7 @@ describe("worker api /api/admin", () => {
   });
 
   it("fails closed when admin access is unavailable", async () => {
-    const response = await apiRequest("/api/admin/login", {
+    const response = await apiRequest("/api/public/admin/login", {
       body: {
         password: "AdminPassword123!#",
         turnstileToken: "turnstile-token",
@@ -44,7 +44,7 @@ describe("worker api /api/admin", () => {
   });
 
   it("rejects invalid admin login request bodies", async () => {
-    const response = await apiRequest("/api/admin/login", {
+    const response = await apiRequest("/api/public/admin/login", {
       body: {
         password: "AdminPassword123!#",
       },
@@ -64,7 +64,7 @@ describe("worker api /api/admin", () => {
       }),
     );
 
-    const response = await apiRequest("/api/admin/login", {
+    const response = await apiRequest("/api/public/admin/login", {
       body: {
         password: "AdminPassword123!#",
         turnstileToken: "turnstile-token",
@@ -85,7 +85,7 @@ describe("worker api /api/admin", () => {
       }),
     );
 
-    const response = await apiRequest("/api/admin/login", {
+    const response = await apiRequest("/api/public/admin/login", {
       body: {
         password: "WrongPassword123!",
         turnstileToken: "turnstile-token",
@@ -106,7 +106,7 @@ describe("worker api /api/admin", () => {
       }),
     );
 
-    const response = await apiRequest("/api/admin/login", {
+    const response = await apiRequest("/api/public/admin/login", {
       body: {
         password: "AdminPassword123!#",
         turnstileToken: "turnstile-token",
@@ -123,7 +123,7 @@ describe("worker api /api/admin", () => {
   });
 
   it("requires admin auth for the domain list", async () => {
-    const response = await apiRequest("/api/admin/domains");
+    const response = await apiRequest("/api/protected/admin/domains");
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
@@ -137,7 +137,7 @@ describe("worker api /api/admin", () => {
       address: "reader@mail.test",
     });
 
-    const response = await apiRequest("/api/admin/domains", {
+    const response = await apiRequest("/api/protected/admin/domains", {
       token,
     });
 
@@ -154,7 +154,7 @@ describe("worker api /api/admin", () => {
       type: "admin",
     });
 
-    const response = await apiRequest("/api/admin/domains", {
+    const response = await apiRequest("/api/protected/admin/domains", {
       token,
     });
 
@@ -189,7 +189,7 @@ describe("worker api /api/admin", () => {
       type: "admin",
     });
 
-    const response = await apiRequest("/api/admin/domains", {
+    const response = await apiRequest("/api/protected/admin/domains", {
       method: "POST",
       token,
       body: {
@@ -228,7 +228,7 @@ describe("worker api /api/admin", () => {
       type: "admin",
     });
 
-    const response = await apiRequest("/api/admin/domains/mail.test", {
+    const response = await apiRequest("/api/protected/admin/domains/mail.test", {
       method: "PATCH",
       token,
       body: {
@@ -257,7 +257,7 @@ describe("worker api /api/admin", () => {
       type: "admin",
     });
 
-    const response = await apiRequest("/api/admin/domains/mail.test", {
+    const response = await apiRequest("/api/protected/admin/domains/mail.test", {
       method: "DELETE",
       token,
     });
@@ -294,7 +294,7 @@ describe("worker api /api/admin", () => {
       type: "admin",
     });
 
-    const response = await apiRequest("/api/admin/temp-inboxes?hasEmails=true&page=0", {
+    const response = await apiRequest("/api/protected/admin/temp-inboxes?hasEmails=true&page=0", {
       token,
     });
 
@@ -329,7 +329,7 @@ describe("worker api /api/admin", () => {
       type: "admin",
     });
 
-    const response = await apiRequest("/api/admin/inboxes", {
+    const response = await apiRequest("/api/protected/admin/inboxes", {
       token,
     });
 

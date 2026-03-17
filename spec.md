@@ -78,9 +78,9 @@ Read replication remains optional at deployment time; if it is disabled, the sam
 
 ```
 User clicks "Create Inbox"
-  → Frontend fetches GET /api/config → receives { turnstileSiteKey }
+  → Frontend fetches GET /api/public/config → receives { turnstileSiteKey }
   → Frontend renders Turnstile widget and user completes the challenge
-  → POST /api/inboxes { domain: "example.com", ttlHours: 24 | 48 | 72, turnstileToken }
+  → POST /api/public/inboxes { domain: "example.com", ttlHours: 24 | 48 | 72, turnstileToken }
   → Worker verifies the Turnstile token against Cloudflare siteverify with expected action = "create_inbox"
   → Worker generates random local part (e.g. "a7f2x9k3m1")
   → Insert into D1 `inboxes` table with expires_at = created_at + requested TTL
@@ -93,7 +93,7 @@ User clicks "Create Inbox"
 
 ```
 User opens an existing temporary inbox
-  → POST /api/inboxes/:address/extend { ttlHours: 48 | 72 }
+  → POST /api/protected/inboxes/:address/extend { ttlHours: 48 | 72 }
   → Worker validates token + inbox ownership
   → Worker computes new expires_at = created_at + requested TTL
   → Reject if requested TTL is not greater than current TTL or exceeds 72h total
@@ -130,7 +130,7 @@ Email arrives at a7f2x9k3m1@example.com
 ```
 User opens inbox view
   → Frontend loads inbox metadata + first email page once
-  → Frontend requests one-time ticket: POST /api/inboxes/:address/ws-ticket (Bearer token + latest inbox bookmark header)
+  → Frontend requests one-time ticket: POST /api/protected/inboxes/:address/ws-ticket (Bearer token + latest inbox bookmark header)
   → Server creates short-lived ticket in KV (ws-ticket:{id}, 60s TTL) → returns { ticket }
   → Frontend connects: ws://host/ws?address=a7f2x9k3m1@example.com&ticket=xxx
   → Worker validates origin, consumes ticket from KV (one-time use), verifies inbox access using a primary-pinned D1 lookup
@@ -146,11 +146,11 @@ User opens inbox view
 
 ```
 Admin opens Admin page
-  → GET /api/admin/domains
+  → GET /api/protected/admin/domains
   → View all configured domains with active/disabled status and inbox counts
-  → POST /api/admin/domains { domain, isActive } to add a new domain
-  → PATCH /api/admin/domains/:domain { isActive } to enable or disable a domain
-  → DELETE /api/admin/domains/:domain to remove a domain only when no non-reserved inboxes remain and reserved inboxes have no emails
+  → POST /api/protected/admin/domains { domain, isActive } to add a new domain
+  → PATCH /api/protected/admin/domains/:domain { isActive } to enable or disable a domain
+  → DELETE /api/protected/admin/domains/:domain to remove a domain only when no non-reserved inboxes remain and reserved inboxes have no emails
   → Enabling or adding a domain seeds the built-in reserved permanent inboxes automatically
 ```
 
@@ -158,12 +158,12 @@ Admin opens Admin page
 
 ```
 Admin opens Admin page
-  → GET /api/admin/temp-inboxes?page=0
+  → GET /api/protected/admin/temp-inboxes?page=0
   → View all active temporary inboxes with pagination and email counts
   → Click "Inspect mailbox"
   → Open /inbox/:address?admin=1 in admin inspection mode
   → Admin can browse inbox contents, attachments, and raw RFC 822 source in read-only inspection mode
-  → Admin can permanently delete the active temporary mailbox via DELETE /api/inboxes/:address
+  → Admin can permanently delete the active temporary mailbox via DELETE /api/protected/inboxes/:address
   → Deletion revokes access tokens and removes associated R2 storage before deleting D1 rows
   → This ordering intentionally prefers fail-closed access over perfect cross-store metadata consistency if the final D1 delete fails
 ```
@@ -172,9 +172,9 @@ Admin opens Admin page
 
 ```
 Admin opens Admin page
-  → Frontend fetches GET /api/config → receives { turnstileSiteKey }
+  → Frontend fetches GET /api/public/config → receives { turnstileSiteKey }
   → Frontend renders Turnstile widget and user completes the challenge
-  → POST /api/admin/login { password, turnstileToken }
+  → POST /api/public/admin/login { password, turnstileToken }
   → Worker verifies the Turnstile token against Cloudflare siteverify with expected action = "admin_login"
   → Worker validates ADMIN_PASSWORD policy and compares the provided password
   → On success, generate admin session token in KV with 1h TTL
@@ -243,9 +243,9 @@ flamemail/
 │       ├── email-handler.ts               # email() processing logic
 │       ├── api/
 │       │   ├── config.ts                  # Public config bootstrap (Turnstile site key)
-│       │   ├── inboxes.ts                 # POST/GET/DELETE /api/inboxes
-│       │   ├── emails.ts                  # GET/DELETE /api/inboxes/:addr/emails
-│       │   ├── domains.ts                 # GET /api/domains
+│       │   ├── inboxes.ts                 # Public inbox creation + protected inbox lifecycle routes
+│       │   ├── emails.ts                  # Protected inbox email routes
+│       │   ├── domains.ts                 # Public domain listing routes
 │       │   └── admin.ts                   # Admin auth, domain management, temp inbox inspection, permanent inbox listing
 │       ├── db/                            # Drizzle ORM layer
 │       │   ├── schema.ts                  # Table definitions
@@ -364,11 +364,11 @@ flamemail/
 
 The Worker expects these runtime bindings:
 
-| Binding                | Purpose                                                                                  |
-| ---------------------- | ---------------------------------------------------------------------------------------- |
-| `ADMIN_PASSWORD`       | Admin session password; must be present and strong or admin access fails closed          |
-| `TURNSTILE_SITE_KEY`   | Public Turnstile site key returned by `GET /api/config` so the SPA can render the widget |
-| `TURNSTILE_SECRET_KEY` | Secret key used by the Worker to call Turnstile `siteverify`                             |
+| Binding                | Purpose                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `ADMIN_PASSWORD`       | Admin session password; must be present and strong or admin access fails closed                 |
+| `TURNSTILE_SITE_KEY`   | Public Turnstile site key returned by `GET /api/public/config` so the SPA can render the widget |
+| `TURNSTILE_SECRET_KEY` | Secret key used by the Worker to call Turnstile `siteverify`                                    |
 
 For local development, `.dev.vars.example` ships Cloudflare's published Turnstile test keys. They are suitable for local development and troubleshooting only; production should use a widget created for the deployed hostname.
 
@@ -651,28 +651,28 @@ HTTP bookmark state is not stored in KV. The client keeps per-scope D1 bookmarks
 
 ## API Design
 
-| Method   | Path                                                  | Auth                               | Description                                                                                                                 |
-| -------- | ----------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `GET`    | `/api/domains`                                        | None                               | List available domains                                                                                                      |
-| `GET`    | `/api/config`                                         | None                               | Return public runtime config for the SPA, currently `{ turnstileSiteKey }`                                                  |
-| `POST`   | `/api/inboxes`                                        | Turnstile                          | Create temp inbox → `{ address, token, ttlHours, expiresAt }`                                                               |
-| `GET`    | `/api/inboxes/:address`                               | Token                              | Get inbox info                                                                                                              |
-| `POST`   | `/api/inboxes/:address/extend`                        | Token                              | Extend a temp inbox to 48h or 72h total lifetime                                                                            |
-| `DELETE` | `/api/inboxes/:address`                               | Token                              | Delete inbox + all emails (owners can delete their inbox; admins can delete active temporary inboxes while inspecting them) |
-| `POST`   | `/api/inboxes/:address/ws-ticket`                     | Token                              | Issue a one-time WebSocket upgrade ticket (60s TTL)                                                                         |
-| `GET`    | `/api/inboxes/:address/emails`                        | Token                              | List emails (paginated; `includeTotal=1` opt-in for count)                                                                  |
-| `GET`    | `/api/inboxes/:address/emails/:id`                    | Token                              | Get full email (fetches body from R2)                                                                                       |
-| `DELETE` | `/api/inboxes/:address/emails/:id`                    | Token                              | Delete single email                                                                                                         |
-| `GET`    | `/api/inboxes/:address/emails/:id/attachments/:attId` | Token                              | Download attachment from R2                                                                                                 |
-| `GET`    | `/api/inboxes/:address/emails/:id/raw`                | Admin token scoped to inbox access | View stored raw RFC 822 source from R2                                                                                      |
-| `POST`   | `/api/admin/login`                                    | Password + Turnstile               | Admin login → `{ token }`                                                                                                   |
-| `GET`    | `/api/admin/domains`                                  | Admin token                        | List all domains with active status and inbox counts                                                                        |
-| `GET`    | `/api/admin/temp-inboxes?page=0`                      | Admin token                        | List active temporary inboxes with pagination and email counts                                                              |
-| `POST`   | `/api/admin/domains`                                  | Admin token                        | Add a new domain and optionally start it active                                                                             |
-| `PATCH`  | `/api/admin/domains/:domain`                          | Admin token                        | Enable or disable a domain                                                                                                  |
-| `DELETE` | `/api/admin/domains/:domain`                          | Admin token                        | Delete a domain only if every remaining inbox is a reserved permanent inbox and none of those inboxes have emails           |
-| `GET`    | `/api/admin/inboxes`                                  | Admin token                        | List seeded permanent inboxes                                                                                               |
-| `WS`     | `/ws?address=...&ticket=...`                          | Ticket                             | WebSocket for real-time notifications (ticket from ws-ticket endpoint)                                                      |
+| Method   | Path                                                            | Auth                               | Description                                                                                                                 |
+| -------- | --------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/public/domains`                                           | None                               | List available domains                                                                                                      |
+| `GET`    | `/api/public/config`                                            | None                               | Return public runtime config for the SPA, currently `{ turnstileSiteKey }`                                                  |
+| `POST`   | `/api/public/inboxes`                                           | Turnstile                          | Create temp inbox → `{ address, token, ttlHours, expiresAt }`                                                               |
+| `GET`    | `/api/protected/inboxes/:address`                               | Token                              | Get inbox info                                                                                                              |
+| `POST`   | `/api/protected/inboxes/:address/extend`                        | Token                              | Extend a temp inbox to 48h or 72h total lifetime                                                                            |
+| `DELETE` | `/api/protected/inboxes/:address`                               | Token                              | Delete inbox + all emails (owners can delete their inbox; admins can delete active temporary inboxes while inspecting them) |
+| `POST`   | `/api/protected/inboxes/:address/ws-ticket`                     | Token                              | Issue a one-time WebSocket upgrade ticket (60s TTL)                                                                         |
+| `GET`    | `/api/protected/inboxes/:address/emails`                        | Token                              | List emails (paginated; `includeTotal=1` opt-in for count)                                                                  |
+| `GET`    | `/api/protected/inboxes/:address/emails/:id`                    | Token                              | Get full email (fetches body from R2)                                                                                       |
+| `DELETE` | `/api/protected/inboxes/:address/emails/:id`                    | Token                              | Delete single email                                                                                                         |
+| `GET`    | `/api/protected/inboxes/:address/emails/:id/attachments/:attId` | Token                              | Download attachment from R2                                                                                                 |
+| `GET`    | `/api/protected/inboxes/:address/emails/:id/raw`                | Admin token scoped to inbox access | View stored raw RFC 822 source from R2                                                                                      |
+| `POST`   | `/api/public/admin/login`                                       | Password + Turnstile               | Admin login → `{ token }`                                                                                                   |
+| `GET`    | `/api/protected/admin/domains`                                  | Admin token                        | List all domains with active status and inbox counts                                                                        |
+| `GET`    | `/api/protected/admin/temp-inboxes?page=0`                      | Admin token                        | List active temporary inboxes with pagination and email counts                                                              |
+| `POST`   | `/api/protected/admin/domains`                                  | Admin token                        | Add a new domain and optionally start it active                                                                             |
+| `PATCH`  | `/api/protected/admin/domains/:domain`                          | Admin token                        | Enable or disable a domain                                                                                                  |
+| `DELETE` | `/api/protected/admin/domains/:domain`                          | Admin token                        | Delete a domain only if every remaining inbox is a reserved permanent inbox and none of those inboxes have emails           |
+| `GET`    | `/api/protected/admin/inboxes`                                  | Admin token                        | List seeded permanent inboxes                                                                                               |
+| `WS`     | `/ws?address=...&ticket=...`                                    | Ticket                             | WebSocket for real-time notifications (ticket from ws-ticket endpoint)                                                      |
 
 ### D1 Bookmark Header
 
@@ -686,7 +686,7 @@ HTTP bookmark state is not stored in KV. The client keeps per-scope D1 bookmarks
 **Public Config:**
 
 ```
-GET /api/config
+GET /api/public/config
 
 → 200 OK
 {
@@ -697,7 +697,7 @@ GET /api/config
 **Create Inbox:**
 
 ```
-POST /api/inboxes
+POST /api/public/inboxes
 Content-Type: application/json
 
 { "domain": "example.com", "ttlHours": 24, "turnstileToken": "0.turnstile-token" }
@@ -714,7 +714,7 @@ Content-Type: application/json
 **Extend Inbox:**
 
 ```
-POST /api/inboxes/a7f2x9k3m1@example.com/extend
+POST /api/protected/inboxes/a7f2x9k3m1@example.com/extend
 Authorization: Bearer tok_abc123...
 Content-Type: application/json
 
@@ -731,7 +731,7 @@ Content-Type: application/json
 **Admin Login:**
 
 ```
-POST /api/admin/login
+POST /api/public/admin/login
 Content-Type: application/json
 
 { "password": "correct horse battery staple ...", "turnstileToken": "0.turnstile-token" }
@@ -745,7 +745,7 @@ Content-Type: application/json
 **Admin Temporary Inboxes:**
 
 ```
-GET /api/admin/temp-inboxes?page=0
+GET /api/protected/admin/temp-inboxes?page=0
 Authorization: Bearer tok_admin...
 
 → 200 OK
@@ -769,7 +769,7 @@ Authorization: Bearer tok_admin...
 **List Emails:**
 
 ```
-GET /api/inboxes/a7f2x9k3m1@example.com/emails?page=0
+GET /api/protected/inboxes/a7f2x9k3m1@example.com/emails?page=0
 Authorization: Bearer tok_abc123...
 
 → 200 OK
@@ -901,7 +901,7 @@ For each domain in the pool:
 
 - Admins can add domains directly from the WebUI
 - Domains can be **disabled** without deleting their historical inboxes or email data
-- Disabled domains disappear from `GET /api/domains` and inbound email is rejected for them
+- Disabled domains disappear from `GET /api/public/domains` and inbound email is rejected for them
 - Domains can only be **deleted** when no non-reserved inboxes reference them and reserved permanent inboxes have no emails; otherwise the API returns a conflict and instructs the admin to disable them instead
 - Adding or re-enabling a domain automatically seeds the built-in reserved permanent inboxes
 - The shipped product does not currently expose arbitrary permanent inbox creation or reservation from the UI or API
@@ -916,7 +916,7 @@ const [localPart, domain] = message.to.split("@");
 
 It validates the domain against the `domains` table and the local part against the `inboxes` table before processing.
 
-The frontend fetches `GET /api/domains` to present domain choices during inbox creation.
+The frontend fetches `GET /api/public/domains` to present domain choices during inbox creation.
 
 ---
 
@@ -927,12 +927,12 @@ The frontend fetches `GET /api/domains` to present domain choices during inbox c
 | Temporary         | Random access token issued at creation | KV with TTL matching inbox expiry | 24h, 48h, or 72h |
 | Permanent (admin) | Admin password → session token         | KV with 1h TTL                    | 1h per session   |
 
-Anonymous write flows use Turnstile in addition to session auth. The client obtains the public site key from `GET /api/config`, renders the widget, and submits the returned token with the form. The Worker verifies the token server-side with Cloudflare and rejects missing, invalid, mismatched-action, or hostname-mismatched tokens.
+Anonymous write flows use Turnstile in addition to session auth. The client obtains the public site key from `GET /api/public/config`, renders the widget, and submits the returned token with the form. The Worker verifies the token server-side with Cloudflare and rejects missing, invalid, mismatched-action, or hostname-mismatched tokens.
 
 ### Temporary Inboxes
 
 - Token generated as `nanoid` (uses `crypto.getRandomValues()` under the hood) on inbox creation, prefixed with `tok_`
-- `POST /api/inboxes` requires a Turnstile token with expected action `create_inbox` before any D1 or KV state is created
+- `POST /api/public/inboxes` requires a Turnstile token with expected action `create_inbox` before any D1 or KV state is created
 - Stored in KV: key = `token:{uuid}`, value = `{ address, type: "user" }`
 - KV TTL matches inbox expiry (24h, 48h, or 72h depending on the selected lifetime)
 - Frontend stores token in `localStorage`
@@ -945,16 +945,16 @@ Anonymous write flows use Turnstile in addition to session auth. The client obta
 - Admin password stored as a Worker secret (`ADMIN_PASSWORD` environment variable)
 - Admin login and admin APIs fail closed if `ADMIN_PASSWORD` is missing, blank, a known placeholder, or too weak
 - A valid `ADMIN_PASSWORD` must be at least 16 characters and include at least 3 of 4 character classes: lowercase, uppercase, number, and symbol
-- `POST /api/admin/login` requires a Turnstile token with expected action `admin_login`
-- `POST /api/admin/login` with `{ password, turnstileToken }` → verifies Turnstile, validates the password, and returns a session token
+- `POST /api/public/admin/login` requires a Turnstile token with expected action `admin_login`
+- `POST /api/public/admin/login` with `{ password, turnstileToken }` → verifies Turnstile, validates the password, and returns a session token
 - Admin token stored in KV: `token:{uuid}` → `{ type: "admin" }`
 - Admin tokens grant access to all permanent inboxes and active temporary inboxes
 - Temporary inbox inspection from the admin UI allows viewing messages, attachments, and stored raw RFC 822 source, but admins cannot extend the mailbox or delete individual emails
-- Admins can **permanently delete** an active temporary inbox while inspecting it via `DELETE /api/inboxes/:address`, which removes the inbox, all emails, and associated R2 storage
+- Admins can **permanently delete** an active temporary inbox while inspecting it via `DELETE /api/protected/inboxes/:address`, which removes the inbox, all emails, and associated R2 storage
 
 ### Auth Middleware
 
-All API endpoints except `GET /api/domains`, `GET /api/config`, `POST /api/inboxes`, and `POST /api/admin/login` require a valid `Authorization: Bearer <token>` header. The two public `POST` routes still require Turnstile verification before the Worker creates state or evaluates admin credentials. The middleware:
+All API endpoints except `GET /api/public/domains`, `GET /api/public/config`, `POST /api/public/inboxes`, and `POST /api/public/admin/login` require a valid `Authorization: Bearer <token>` header. The two public `POST` routes still require Turnstile verification before the Worker creates state or evaluates admin credentials. The middleware:
 
 1. Extracts token from header
 2. Looks up `token:{value}` in KV

@@ -105,7 +105,7 @@ This applies remote D1 migrations and then runs `wrangler deploy`.
    ```
    Must be ≥ 16 characters with at least 3 of 4 character classes (lowercase, uppercase, digit, symbol). Admin APIs fail closed if this is missing or too weak.
 4. A **Cloudflare Turnstile widget** for your deployed hostname, plus Worker environment values for:
-   - `TURNSTILE_SITE_KEY` — public site key returned by `/api/config`
+   - `TURNSTILE_SITE_KEY` — public site key returned by `/api/public/config`
    - `TURNSTILE_SECRET_KEY` — secret used by the Worker to verify challenge responses
 
    If Turnstile is not configured, flamemail fails closed and blocks inbox creation plus admin login.
@@ -118,7 +118,7 @@ This applies remote D1 migrations and then runs `wrangler deploy`.
 
 - **Inbox access** — each temporary inbox gets a unique token stored in KV; expires with the inbox
 - **Admin access** — password-authenticated sessions with 1-hour TTL
-- **Human verification** — `POST /api/inboxes` and `POST /api/admin/login` require a valid Turnstile token before the Worker creates state or evaluates admin credentials
+- **Human verification** — `POST /api/public/inboxes` and `POST /api/public/admin/login` require a valid Turnstile token before the Worker creates state or evaluates admin credentials
 - **WebSocket upgrades** — require origin validation + a one-time ticket consumed on connect
 - **Replica consistency** — inbox/admin HTTP requests propagate D1 bookmarks so replica reads stay sequentially consistent across requests
 - **Email rendering** — HTML is sanitized and served inside a sandboxed iframe with strict CSP

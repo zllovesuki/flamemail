@@ -5,7 +5,7 @@ import { emails } from "@/worker/db/schema";
 import { getRawStorageKey } from "@/worker/services/storage";
 import { apiRequest, resetWorkerState, seedDomain, seedEmail, seedInbox, seedSession } from "./helpers";
 
-describe("worker api /api/inboxes/:address/emails", () => {
+describe("worker api /api/protected/inboxes/:address/emails", () => {
   beforeEach(async () => {
     await resetWorkerState();
   });
@@ -51,7 +51,7 @@ describe("worker api /api/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails?includeTotal=1&page=0`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails?includeTotal=1&page=0`,
       {
         token,
       },
@@ -102,7 +102,7 @@ describe("worker api /api/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
       {
         token,
       },
@@ -146,7 +146,7 @@ describe("worker api /api/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
       {
         token,
       },
@@ -179,9 +179,12 @@ describe("worker api /api/inboxes/:address/emails", () => {
       address: inbox.fullAddress,
     });
 
-    const response = await apiRequest(`/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/missing-email`, {
-      token,
-    });
+    const response = await apiRequest(
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/missing-email`,
+      {
+        token,
+      },
+    );
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
@@ -205,7 +208,7 @@ describe("worker api /api/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/raw`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/raw`,
       {
         token,
       },
@@ -232,7 +235,7 @@ describe("worker api /api/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/raw`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/raw`,
       {
         token,
       },
@@ -258,7 +261,7 @@ describe("worker api /api/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
       {
         method: "DELETE",
         token,
@@ -294,7 +297,7 @@ describe("worker api /api/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
       {
         method: "DELETE",
         token,
@@ -337,7 +340,7 @@ describe("worker api /api/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/attachments/${seededEmail.attachments[0]?.id}`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/attachments/${seededEmail.attachments[0]?.id}`,
       {
         token,
       },
@@ -364,7 +367,7 @@ describe("worker api /api/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/attachments/missing-attachment`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/attachments/missing-attachment`,
       {
         token,
       },
