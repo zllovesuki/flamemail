@@ -102,8 +102,8 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
   };
 
   return (
-    <section className="rounded-2xl border border-flame-500/20 bg-gradient-to-br from-zinc-900 to-zinc-900/80 p-6">
-      <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-wider text-flame-400">
+    <section className="rounded-2xl border border-accent-500/20 bg-gradient-to-br from-zinc-900 to-zinc-900/80 p-6">
+      <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-wider text-accent-400">
         Instant Address
       </span>
       <h2 className="text-lg font-semibold text-zinc-100">Create a temporary inbox</h2>
@@ -124,7 +124,7 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
           <select
             value={selectedDomain}
             onChange={(event) => setSelectedDomain(event.target.value)}
-            className="w-full rounded-xl border border-zinc-700/60 bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-100 outline-none transition-colors focus:border-flame-500/50 focus:ring-1 focus:ring-flame-500/30"
+            className="w-full rounded-xl border border-zinc-700/60 bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-100 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30"
           >
             {domains.length === 0 ? <option value="">No active domains</option> : null}
             {domains.map((domain) => (
@@ -147,9 +147,9 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
                   type="button"
                   onClick={() => setTtlHours(option.value)}
                   className={[
-                    "rounded-xl border px-4 py-3 text-left transition-colors",
+                    "rounded-xl border px-4 py-3 text-left",
                     selected
-                      ? "border-flame-500/50 bg-flame-500/10 text-zinc-100"
+                      ? "border-accent-500/50 bg-accent-500/10 text-zinc-100"
                       : "border-zinc-700/60 bg-zinc-800/60 text-zinc-400 hover:bg-zinc-800",
                   ].join(" ")}
                 >
@@ -169,7 +169,7 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
         />
 
         <button
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-flame-500 to-flame-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-flame-500/20 transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-500 to-accent-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-accent-500/10 transition-colors hover:from-accent-400 hover:to-accent-500 disabled:cursor-not-allowed disabled:opacity-50"
           type="submit"
           disabled={loading || submitting || !selectedDomain || !turnstileToken}
         >

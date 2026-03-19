@@ -177,7 +177,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
           <div className="flex shrink-0 items-center gap-2">
             {canViewRaw ? (
               <button
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-2.5 py-1 text-xs font-medium text-zinc-400 transition-colors hover:border-flame-500/40 hover:bg-zinc-800/90 hover:text-zinc-200 disabled:pointer-events-none disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-2.5 py-1 text-xs font-medium text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800/90 hover:text-zinc-200 disabled:pointer-events-none disabled:opacity-50"
                 type="button"
                 disabled={loading || downloadingRaw}
                 onClick={() => void handleViewRaw()}
@@ -188,7 +188,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
             ) : null}
             {canDelete ? (
               <button
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-2.5 py-1 text-xs font-medium text-zinc-400 transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-2.5 py-1 text-xs font-medium text-zinc-400 hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
                 type="button"
                 disabled={loading}
                 onClick={() => onDelete(email.id)}
@@ -228,12 +228,12 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
               <button
                 key={attachment.id}
                 type="button"
-                className="flex items-center gap-3 rounded-lg border border-zinc-700/50 bg-zinc-800/40 px-3 py-2 text-left text-sm transition-colors hover:border-flame-500/30 hover:bg-zinc-800/70 disabled:opacity-50"
+                className="flex items-center gap-3 rounded-lg border border-zinc-700/50 bg-zinc-800/40 px-3 py-2 text-left text-sm hover:border-zinc-600 hover:bg-zinc-800/70 disabled:opacity-50"
                 onClick={() => handleDownload(attachment)}
                 disabled={busy || loading}
               >
                 {busy ? (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-flame-400" />
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent-400" />
                 ) : (
                   <Download className="h-4 w-4 shrink-0 text-zinc-500" />
                 )}

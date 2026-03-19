@@ -26,7 +26,7 @@ export function EmailList({
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Messages</span>
           <h2 className="text-base font-semibold text-zinc-100">Inbox timeline</h2>
         </div>
-        <span className="inline-flex min-w-[28px] items-center justify-center rounded-full bg-flame-500/10 px-2.5 py-0.5 text-xs font-semibold text-flame-400">
+        <span className="inline-flex min-w-[28px] items-center justify-center rounded-full bg-accent-500/10 px-2.5 py-0.5 text-xs font-semibold text-accent-400">
           {emails.length}
         </span>
       </div>
@@ -58,15 +58,15 @@ export function EmailList({
             <button
               key={email.id}
               type="button"
-              className={`group relative w-full rounded-xl border px-4 py-3 text-left transition-all ${
+              className={`group relative w-full rounded-xl border px-4 py-3 text-left transition-colors ${
                 active
-                  ? "border-flame-500/30 bg-flame-500/5"
+                  ? "border-accent-500/30 bg-accent-500/5"
                   : "border-transparent bg-zinc-800/20 hover:border-zinc-700/60 hover:bg-zinc-800/40"
               }`}
               onClick={() => onSelect(email.id)}
             >
               {unread ? (
-                <span className="absolute left-1.5 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-flame-500" />
+                <span className="absolute left-1.5 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-accent-500" />
               ) : null}
               <div className="flex items-center justify-between gap-2">
                 <strong
@@ -75,7 +75,7 @@ export function EmailList({
                   {email.fromName || email.fromAddress}
                 </strong>
                 {loadingEmailId === email.id ? (
-                  <Loader2 className="h-3 w-3 shrink-0 animate-spin text-flame-400" />
+                  <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent-400" />
                 ) : (
                   <span className="shrink-0 text-xs text-zinc-500" title={fullDate(email.receivedAt)}>
                     {relativeTime(email.receivedAt)}

@@ -10,7 +10,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
-          <span className="inline-grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-flame-500 to-flame-600 shadow-lg shadow-flame-500/20">
+          <span className="inline-grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-accent-500 to-accent-600 shadow-sm shadow-accent-500/10">
             <Flame className="h-5 w-5 text-white" />
           </span>
           <span className="hidden sm:block">
@@ -25,7 +25,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
             end
             className={({ isActive }) =>
               `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                isActive ? "bg-flame-500/10 text-flame-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                isActive ? "bg-accent-500/10 text-accent-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
               }`
             }
           >
@@ -42,7 +42,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
             to="/about"
             className={({ isActive }) =>
               `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                isActive ? "bg-flame-500/10 text-flame-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                isActive ? "bg-accent-500/10 text-accent-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
               }`
             }
           >
@@ -53,7 +53,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
             to="/admin"
             className={({ isActive }) =>
               `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                isActive ? "bg-flame-500/10 text-flame-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                isActive ? "bg-accent-500/10 text-accent-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
               }`
             }
           >

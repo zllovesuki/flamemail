@@ -79,7 +79,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
             onClick={handleToggleFilter}
             className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
               hasEmails
-                ? "border-flame-500/30 bg-flame-500/10 text-flame-300"
+                ? "border-accent-500/30 bg-accent-500/10 text-accent-300"
                 : "border-zinc-800/60 bg-zinc-900 text-zinc-500 hover:border-zinc-700/60 hover:text-zinc-400"
             }`}
           >
@@ -129,7 +129,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
 
               <Link
                 to={`/inbox/${encodeURIComponent(inbox.address)}?admin=1`}
-                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-flame-500/20 bg-flame-500/10 px-3 py-1.5 text-xs font-medium text-flame-300 transition-colors hover:bg-flame-500/20"
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-accent-500/20 bg-accent-500/10 px-3 py-1.5 text-xs font-medium text-accent-300 transition-colors hover:bg-accent-500/20"
               >
                 <Search className="h-3 w-3" />
                 Inspect mailbox

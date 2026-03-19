@@ -32,11 +32,11 @@ export function PermanentInboxList({ inboxes, loading }: PermanentInboxListProps
         {inboxes.map((inbox) => (
           <Link
             key={inbox.address}
-            className="group rounded-xl border border-zinc-800/50 bg-zinc-800/30 p-4 transition-colors hover:border-flame-500/30 hover:bg-zinc-800/60"
+            className="group rounded-xl border border-zinc-800/50 bg-zinc-800/30 p-4 hover:border-zinc-700/60 hover:bg-zinc-800/60"
             to={`/inbox/${encodeURIComponent(inbox.address)}?admin=1`}
           >
             <span className="flex items-center justify-between">
-              <strong className="text-sm font-semibold text-zinc-200 group-hover:text-flame-400">
+              <strong className="text-sm font-semibold text-zinc-200 group-hover:text-accent-400">
                 {inbox.localPart}
               </strong>
               <span className="rounded-full bg-zinc-700/60 px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-300">

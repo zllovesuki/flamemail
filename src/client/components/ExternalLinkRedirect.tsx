@@ -33,7 +33,7 @@ export function ExternalLinkRedirect() {
               <Shield className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-lg font-semibold text-zinc-100 sm:text-xl">Leaving Flamemail</h1>
+              <h1 className="text-lg font-semibold text-zinc-100 sm:text-xl">Leaving flamemail</h1>
               <p className="mt-1 text-sm text-zinc-400">Links in emails open through this safety check first.</p>
             </div>
           </div>
@@ -66,7 +66,7 @@ export function ExternalLinkRedirect() {
                 <a
                   href={target.toString()}
                   rel="noopener noreferrer nofollow"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-flame-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-flame-400"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-400"
                 >
                   Continue to site
                   <ArrowUpRight className="h-4 w-4" />

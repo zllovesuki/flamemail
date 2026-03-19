@@ -42,7 +42,7 @@ export function InboxHeader({
     <section className="flex flex-col gap-4 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-flame-400">Live Inbox</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-accent-400">Live Inbox</span>
           <span className={`h-1.5 w-1.5 rounded-full ${socketColors[socketState] ?? "bg-zinc-600"}`} />
           <span className="text-xs text-zinc-500">{socketState}</span>
         </div>
@@ -52,7 +52,7 @@ export function InboxHeader({
             <span className="text-sm text-zinc-500">Permanent inbox</span>
           ) : countdown ? (
             <span className="flex items-center gap-1.5 text-sm text-zinc-500">
-              <Timer className="h-3.5 w-3.5 text-flame-400" />
+              <Timer className="h-3.5 w-3.5 text-accent-400" />
               {countdown}
             </span>
           ) : (

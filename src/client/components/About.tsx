@@ -33,9 +33,9 @@ export function About() {
     <main className="animate-slide-up mx-auto max-w-3xl space-y-10 pt-2">
       {/* Intro */}
       <section>
-        <h1 className="text-xl font-bold text-zinc-100 sm:text-2xl">About Flamemail</h1>
+        <h1 className="text-xl font-bold text-zinc-100 sm:text-2xl">About flamemail</h1>
         <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
-          Flamemail is a temporary email service that runs entirely on Cloudflare's developer platform. It provides
+          flamemail is a temporary email service that runs entirely on Cloudflare's developer platform. It provides
           disposable inboxes with real-time email delivery, sandboxed HTML rendering, and automatic cleanup — no
           traditional server required.
         </p>
@@ -47,7 +47,7 @@ export function About() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {FEATURES.map((f) => (
             <div key={f.title} className="rounded-xl border border-zinc-800/60 bg-zinc-900/50 p-5">
-              <f.icon className="h-5 w-5 text-flame-400" />
+              <f.icon className="h-5 w-5 text-accent-400" />
               <h3 className="mt-2 text-sm font-semibold text-zinc-200">{f.title}</h3>
               <p className="mt-1 text-xs leading-relaxed text-zinc-500">{f.desc}</p>
             </div>
@@ -64,7 +64,7 @@ export function About() {
               key={s.label}
               className="flex items-start gap-3 rounded-xl border border-zinc-800/50 bg-zinc-800/30 px-4 py-3"
             >
-              <span className="inline-grid h-7 w-7 shrink-0 place-items-center rounded-full bg-flame-500/10 text-flame-400">
+              <span className="inline-grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-500/10 text-accent-400">
                 <s.icon className="h-3.5 w-3.5" />
               </span>
               <div className="min-w-0">

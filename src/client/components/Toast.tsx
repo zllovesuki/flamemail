@@ -29,7 +29,7 @@ const icons: Record<ToastType, typeof CheckCircle> = {
 const styles: Record<ToastType, string> = {
   success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
   error: "border-red-500/30 bg-red-500/10 text-red-300",
-  info: "border-flame-500/30 bg-flame-500/10 text-flame-300",
+  info: "border-accent-500/30 bg-accent-500/10 text-accent-300",
 };
 
 export function ToastContainer() {
