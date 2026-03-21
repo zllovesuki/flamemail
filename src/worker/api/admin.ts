@@ -76,7 +76,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
 
     const password = body.password;
 
-    const passwordMatches = await constantTimeEqualStrings(password, c.env.ADMIN_PASSWORD);
+    const passwordMatches = constantTimeEqualStrings(password, c.env.ADMIN_PASSWORD);
 
     if (!passwordMatches) {
       logger.warn("admin_login_failed", "Rejected admin login attempt", {

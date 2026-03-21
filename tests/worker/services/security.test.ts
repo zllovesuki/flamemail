@@ -23,12 +23,16 @@ describe("getAdminPasswordConfigurationIssue", () => {
 });
 
 describe("constantTimeEqualStrings", () => {
-  it("returns true for matching values", async () => {
-    await expect(constantTimeEqualStrings("match", "match")).resolves.toBe(true);
+  it("returns true for matching values", () => {
+    expect(constantTimeEqualStrings("match", "match")).toBe(true);
   });
 
-  it("returns false for non-matching values", async () => {
-    await expect(constantTimeEqualStrings("match", "mismatch")).resolves.toBe(false);
+  it("returns false for non-matching values with the same length", () => {
+    expect(constantTimeEqualStrings("match", "patch")).toBe(false);
+  });
+
+  it("returns false for non-matching values with different lengths", () => {
+    expect(constantTimeEqualStrings("match", "mismatch")).toBe(false);
   });
 });
 

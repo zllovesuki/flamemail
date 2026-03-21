@@ -1,5 +1,9 @@
 import { SessionRecord, WebSocketTicketRecord } from "@/shared/contracts";
 
+interface CloudflareSubtleCrypto extends SubtleCrypto {
+  timingSafeEqual(a: ArrayBuffer | ArrayBufferView, b: ArrayBuffer | ArrayBufferView): boolean;
+}
+
 const APP_CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self' https://challenges.cloudflare.com",
@@ -66,23 +70,16 @@ export function getPublicErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
-export async function constantTimeEqualStrings(left: string, right: string) {
+export function constantTimeEqualStrings(left: string, right: string) {
   const encoder = new TextEncoder();
-  const [leftDigest, rightDigest] = await Promise.all([
-    crypto.subtle.digest("SHA-256", encoder.encode(left)),
-    crypto.subtle.digest("SHA-256", encoder.encode(right)),
-  ]);
+  const subtleCrypto = crypto.subtle as CloudflareSubtleCrypto;
+  const leftBytes = encoder.encode(left);
+  const rightBytes = encoder.encode(right);
+  const lengthsMatch = leftBytes.byteLength === rightBytes.byteLength;
 
-  const leftBytes = new Uint8Array(leftDigest);
-  const rightBytes = new Uint8Array(rightDigest);
-
-  let difference = 0;
-
-  for (let index = 0; index < leftBytes.length; index += 1) {
-    difference |= leftBytes[index] ^ rightBytes[index];
-  }
-
-  return difference === 0;
+  return lengthsMatch
+    ? subtleCrypto.timingSafeEqual(leftBytes, rightBytes)
+    : !subtleCrypto.timingSafeEqual(leftBytes, leftBytes);
 }
 
 export function issueNoStoreHeaders(headers: Headers) {
