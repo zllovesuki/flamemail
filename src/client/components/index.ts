@@ -8,5 +8,5 @@ export { ExternalLinkRedirect } from "./ExternalLinkRedirect";
 export { Footer } from "./Footer";
 export { Header } from "./Header";
 export { InboxView } from "./InboxView";
-export { Toast, ToastContainer, toast } from "./Toast";
+export { ToastContainer, toast } from "./Toast";
 export { TurnstileWidget } from "./TurnstileWidget";

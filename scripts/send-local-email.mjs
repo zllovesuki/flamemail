@@ -1,13 +1,37 @@
 import { randomUUID } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
-const DEFAULT_ENDPOINT = "http://127.0.0.1:5173/cdn-cgi/handler/email";
 const DEFAULT_FROM = "sender@example.com";
 const DEFAULT_FROM_NAME = "Flamemail Local Sender";
 const DEFAULT_SUBJECT = "Flamemail local test";
+const DEFAULT_HOST = "127.0.0.1";
+const EMAIL_HANDLER_PATH = "/cdn-cgi/handler/email";
+const PUBLIC_CONFIG_PATH = "/api/public/config";
+const ROOT_PATH = "/";
+const DEFAULT_ENDPOINT_DESCRIPTION = "auto-detect running local Flamemail dev server";
+const PROBE_FROM = "probe@flamemail.local";
+const PROBE_TO = "probe@flamemail.local";
+const PROBE_TIMEOUT_MS = 750;
+const FLAMEMAIL_TITLE_MARKER = "<title>flamemail</title>";
+const FLAMEMAIL_DESCRIPTION_MARKER = "flamemail is a disposable email service built on cloudflare workers.";
+const TURNSTILE_UNAVAILABLE_ERROR = "Human verification is temporarily unavailable.";
 const SAMPLE_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9sWw2i8AAAAASUVORK5CYII=";
+
+function createDefaultCandidatePorts() {
+  const ports = [];
+
+  for (let port = 5173; port <= 5193; port += 1) {
+    ports.push(port);
+  }
+
+  ports.push(4173);
+  return ports;
+}
+
+const DEFAULT_CANDIDATE_PORTS = createDefaultCandidatePorts();
 
 function printHelp() {
   console.log(`Send a local test email to the Worker email() handler.
@@ -31,7 +55,7 @@ Options:
   --html-remote-test       Use a built-in HTML test message with remote assets.
   --attachment <path>      Attach a file. Repeatable.
   --picture                Attach a built-in sample PNG.
-  --endpoint <url>         Local email endpoint. Default: ${DEFAULT_ENDPOINT}
+  --endpoint <url>         Local email endpoint. Default: ${DEFAULT_ENDPOINT_DESCRIPTION}
   --write-eml <path>       Save the generated MIME message to disk.
   --dry-run                Build the email but do not POST it.
   --help                   Show this help.
@@ -47,7 +71,7 @@ function parseArgs(argv) {
   const options = {
     attachments: [],
     dryRun: false,
-    endpoint: DEFAULT_ENDPOINT,
+    endpoint: "",
     from: DEFAULT_FROM,
     fromName: DEFAULT_FROM_NAME,
     html: "",
@@ -218,6 +242,155 @@ function formatMailbox(address, name = "") {
 
 function wrapBase64(value) {
   return value.replace(/(.{76})/g, "$1\r\n");
+}
+
+function buildEmailHandlerEndpoint({ host = DEFAULT_HOST, port }) {
+  return `http://${host}:${port}${EMAIL_HANDLER_PATH}`;
+}
+
+function buildBaseUrl({ host = DEFAULT_HOST, port }) {
+  return `http://${host}:${port}`;
+}
+
+async function fetchWithTimeout(url, { fetchImpl = fetch, timeoutMs = PROBE_TIMEOUT_MS, ...options } = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetchImpl(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function probeFlamemailRoot(baseUrl, { fetchImpl = fetch, timeoutMs = PROBE_TIMEOUT_MS } = {}) {
+  try {
+    const response = await fetchWithTimeout(new URL(ROOT_PATH, baseUrl), {
+      fetchImpl,
+      method: "GET",
+      timeoutMs,
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+
+    if (!contentType.includes("text/html")) {
+      return false;
+    }
+
+    const body = (await response.text()).toLowerCase();
+    return body.includes(FLAMEMAIL_TITLE_MARKER) || body.includes(FLAMEMAIL_DESCRIPTION_MARKER);
+  } catch {
+    return false;
+  }
+}
+
+async function probeFlamemailConfig(baseUrl, { fetchImpl = fetch, timeoutMs = PROBE_TIMEOUT_MS } = {}) {
+  try {
+    const response = await fetchWithTimeout(new URL(PUBLIC_CONFIG_PATH, baseUrl), {
+      fetchImpl,
+      method: "GET",
+      timeoutMs,
+    });
+
+    if (response.status !== 200 && response.status !== 503) {
+      return false;
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+
+    if (!contentType.includes("application/json")) {
+      return false;
+    }
+
+    const body = await response.json();
+
+    if (response.status === 200) {
+      return typeof body?.turnstileSiteKey === "string" && body.turnstileSiteKey.length > 0;
+    }
+
+    return body?.error === TURNSTILE_UNAVAILABLE_ERROR;
+  } catch {
+    return false;
+  }
+}
+
+async function probeFlamemailApp(baseUrl, options = {}) {
+  const [isFlamemailRoot, isFlamemailConfig] = await Promise.all([
+    probeFlamemailRoot(baseUrl, options),
+    probeFlamemailConfig(baseUrl, options),
+  ]);
+
+  return isFlamemailRoot && isFlamemailConfig;
+}
+
+async function probeEmailHandler(endpoint, { fetchImpl = fetch, timeoutMs = PROBE_TIMEOUT_MS } = {}) {
+  const probeUrl = new URL(endpoint);
+
+  probeUrl.searchParams.set("from", PROBE_FROM);
+  probeUrl.searchParams.set("to", PROBE_TO);
+
+  try {
+    const response = await fetchWithTimeout(probeUrl, {
+      fetchImpl,
+      method: "GET",
+      timeoutMs,
+    });
+    const body = await response.text();
+
+    return response.status === 400 && body.includes("Invalid email");
+  } catch {
+    return false;
+  }
+}
+
+export async function detectLocalEmailEndpoint({
+  candidatePorts = DEFAULT_CANDIDATE_PORTS,
+  fetchImpl = fetch,
+  host = DEFAULT_HOST,
+  timeoutMs = PROBE_TIMEOUT_MS,
+} = {}) {
+  const checkedPorts = [];
+
+  for (const port of candidatePorts) {
+    checkedPorts.push(port);
+
+    const baseUrl = buildBaseUrl({ host, port });
+    const isFlamemailApp = await probeFlamemailApp(baseUrl, { fetchImpl, timeoutMs });
+
+    if (!isFlamemailApp) {
+      continue;
+    }
+
+    const endpoint = buildEmailHandlerEndpoint({ host, port });
+    const isMatch = await probeEmailHandler(endpoint, { fetchImpl, timeoutMs });
+
+    if (isMatch) {
+      return endpoint;
+    }
+  }
+
+  throw new Error(
+    `Could not detect a local Flamemail dev server. Checked ports: ${checkedPorts.join(", ")}. Start npm run dev or pass --endpoint.`,
+  );
+}
+
+export async function resolveEndpoint(options, { detectEndpoint = detectLocalEmailEndpoint } = {}) {
+  if (options.endpoint) {
+    return options.endpoint;
+  }
+
+  if (options.dryRun) {
+    return null;
+  }
+
+  return detectEndpoint();
 }
 
 function guessContentType(filename) {
@@ -393,19 +566,26 @@ async function main() {
     await writeFile(options.writeEml, mimeMessage, "utf8");
   }
 
+  let resolvedEndpoint = options.endpoint || null;
+
   console.log(`Prepared local email:`);
   console.log(`- To: ${options.to}`);
   console.log(`- From: ${formatMailbox(options.from, options.fromName)}`);
   console.log(`- Subject: ${options.subject}`);
   console.log(`- Attachments: ${attachments.length}`);
-  console.log(`- Endpoint: ${options.endpoint}`);
+  console.log(`- Endpoint: ${resolvedEndpoint ?? "auto-detect on send"}`);
 
   if (options.dryRun) {
     console.log("Dry run complete. Email was not sent.");
     return;
   }
 
-  const endpoint = new URL(options.endpoint);
+  if (!resolvedEndpoint) {
+    resolvedEndpoint = await resolveEndpoint(options);
+    console.log(`Detected local email endpoint: ${resolvedEndpoint}`);
+  }
+
+  const endpoint = new URL(resolvedEndpoint);
   endpoint.searchParams.set("from", options.from);
   endpoint.searchParams.set("to", options.to);
 
@@ -429,8 +609,20 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  console.error("Run with --help to see usage.");
-  process.exit(1);
-});
+function isMainModule() {
+  const entryPoint = process.argv[1];
+
+  if (!entryPoint) {
+    return false;
+  }
+
+  return import.meta.url === pathToFileURL(entryPoint).href;
+}
+
+if (isMainModule()) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    console.error("Run with --help to see usage.");
+    process.exit(1);
+  });
+}
