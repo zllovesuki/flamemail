@@ -52,7 +52,11 @@ export function ToastContainer() {
   }, [addToast]);
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-[100] flex flex-col items-end gap-2 sm:left-auto">
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed bottom-4 left-4 right-4 z-[100] flex flex-col items-end gap-2 sm:left-auto"
+    >
       {toasts.map((item) => (
         <ToastNotification key={item.id} item={item} onDismiss={removeToast} />
       ))}

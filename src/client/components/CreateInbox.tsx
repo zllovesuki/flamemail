@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Globe, Loader2, Sparkles } from "lucide-react";
 import { TurnstileWidget } from "@/client/components/TurnstileWidget";
+import { Button, Card, ErrorBanner } from "@/client/components/ui";
 import { useTurnstileForm } from "@/client/hooks/useTurnstileForm";
 import {
   TEMP_MAILBOX_TTL_HOURS,
@@ -102,7 +103,7 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
   };
 
   return (
-    <section className="rounded-2xl border border-accent-500/20 bg-gradient-to-br from-zinc-900 to-zinc-900/80 p-6">
+    <Card variant="accent">
       <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-wider text-accent-400">
         Instant Address
       </span>
@@ -168,33 +169,29 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
           resetKey={turnstileResetKey}
         />
 
-        <button
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-500 to-accent-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-accent-500/10 transition-colors hover:from-accent-400 hover:to-accent-500 disabled:cursor-not-allowed disabled:opacity-50"
+        <Button
+          variant="primary"
+          size="md"
+          className="w-full"
           type="submit"
-          disabled={loading || submitting || !selectedDomain || !turnstileToken}
+          loading={submitting}
+          icon={submitting ? undefined : <Sparkles className="h-4 w-4" />}
+          disabled={loading || !selectedDomain || !turnstileToken}
         >
-          {submitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Creating...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" /> Create inbox
-            </>
-          )}
-        </button>
+          {submitting ? "Creating..." : "Create inbox"}
+        </Button>
       </form>
 
       {loading ? (
-        <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
+        <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500" aria-busy="true">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Loading available domains...
         </p>
       ) : null}
-      {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
+      {error ? <ErrorBanner className="mt-4">{error}</ErrorBanner> : null}
       {!loading && domains.length === 0 ? (
         <p className="mt-4 text-sm text-zinc-500">No domains available yet. An admin needs to add one first.</p>
       ) : null}
-    </section>
+    </Card>
   );
 }

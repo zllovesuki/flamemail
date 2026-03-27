@@ -5,6 +5,7 @@ import { DomainManager } from "@/client/components/admin/DomainManager";
 import { PermanentInboxList } from "@/client/components/admin/PermanentInboxList";
 import { TempInboxList } from "@/client/components/admin/TempInboxList";
 import { toast } from "@/client/components/Toast";
+import { Button, Card, ErrorBanner } from "@/client/components/ui";
 import { useAdminSessionGuard } from "@/client/hooks/useAdminSessionGuard";
 import { useTurnstileForm } from "@/client/hooks/useTurnstileForm";
 import {
@@ -138,7 +139,7 @@ export function AdminLogin() {
   return (
     <main className="animate-slide-up space-y-6">
       {token ? (
-        <section className="flex flex-col gap-4 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <Card className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="inline-grid h-9 w-9 place-items-center rounded-lg bg-accent-500/10">
               <Shield className="h-5 w-5 text-accent-400" />
@@ -151,17 +152,12 @@ export function AdminLogin() {
               </span>
             </div>
           </div>
-          <button
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700/60"
-            type="button"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-3.5 w-3.5" />
+          <Button icon={<LogOut className="h-3.5 w-3.5" />} onClick={handleLogout}>
             Sign out
-          </button>
-        </section>
+          </Button>
+        </Card>
       ) : (
-        <section className="rounded-2xl border border-accent-500/20 bg-gradient-to-br from-zinc-900 to-zinc-900/80 p-6">
+        <Card variant="accent">
           <div className="mb-2 flex items-center gap-1.5">
             <Shield className="h-3.5 w-3.5 text-accent-400" />
             <span className="text-xs font-semibold uppercase tracking-wider text-accent-400">Reserved Access</span>
@@ -196,22 +192,19 @@ export function AdminLogin() {
               resetKey={turnstileResetKey}
             />
 
-            <button
-              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-500 to-accent-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-accent-500/10 transition-colors hover:from-accent-400 hover:to-accent-500 disabled:cursor-not-allowed disabled:opacity-50"
+            <Button
+              variant="primary"
+              size="md"
               type="submit"
-              disabled={loading || password.length === 0 || !turnstileToken}
+              loading={loading}
+              disabled={password.length === 0 || !turnstileToken}
             >
-              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
               {loading ? "Signing in..." : "Sign in"}
-            </button>
+            </Button>
           </form>
 
-          {error ? (
-            <p className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-              {error}
-            </p>
-          ) : null}
-        </section>
+          {error ? <ErrorBanner className="mt-4">{error}</ErrorBanner> : null}
+        </Card>
       )}
 
       {token ? (

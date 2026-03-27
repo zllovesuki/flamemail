@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Clock, Filter, Loader2, Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button, Card, ErrorBanner, PageHeader } from "@/client/components/ui";
 import { useAdminSessionGuard } from "@/client/hooks/useAdminSessionGuard";
 import { listAdminTempInboxes, type AdminTempInbox } from "@/client/lib/api";
 import { fullDate } from "@/client/lib/time";
@@ -61,18 +62,14 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
   };
 
   return (
-    <section className="rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-6">
+    <Card>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="mb-2 flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-zinc-500" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Temporary Inboxes</span>
-          </div>
-          <h2 className="text-lg font-semibold text-zinc-100">Currently active mailboxes</h2>
-          <p className="mt-2 text-sm text-zinc-500">
-            Browse live temporary inboxes, see how many emails they contain, and inspect them in read-only admin mode.
-          </p>
-        </div>
+        <PageHeader
+          caption="Temporary Inboxes"
+          captionIcon={<Clock className="h-3.5 w-3.5 text-zinc-500" />}
+          heading="Currently active mailboxes"
+          description="Browse live temporary inboxes, see how many emails they contain, and inspect them in read-only admin mode."
+        />
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
@@ -92,9 +89,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
         </div>
       </div>
 
-      {error ? (
-        <p className="mt-5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>
-      ) : null}
+      {error ? <ErrorBanner className="mt-5">{error}</ErrorBanner> : null}
 
       {loading ? (
         <p className="mt-5 flex items-center gap-2 text-sm text-zinc-500">
@@ -145,27 +140,20 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
             Page {page + 1} of {totalPages}
           </span>
           <div className="flex gap-2">
-            <button
-              type="button"
+            <Button
+              icon={<ChevronLeft className="h-3 w-3" />}
               disabled={page === 0 || loading}
               onClick={() => handlePageChange(page - 1)}
-              className="flex items-center gap-1 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700/60 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <ChevronLeft className="h-3 w-3" />
               Previous
-            </button>
-            <button
-              type="button"
-              disabled={page >= totalPages - 1 || loading}
-              onClick={() => handlePageChange(page + 1)}
-              className="flex items-center gap-1 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700/60 disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            </Button>
+            <Button disabled={page >= totalPages - 1 || loading} onClick={() => handlePageChange(page + 1)}>
               Next
               <ChevronRight className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
-    </section>
+    </Card>
   );
 }

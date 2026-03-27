@@ -1,4 +1,5 @@
 import { Clock, Copy, RefreshCw, Timer, Trash2, ShieldAlert } from "lucide-react";
+import { Button } from "@/client/components/ui";
 import type { InboxInfo, TempMailboxTtlHours } from "@/client/lib/api";
 
 const socketColors: Record<string, string> = {
@@ -68,27 +69,17 @@ export function InboxHeader({
       </div>
 
       <div className="flex shrink-0 flex-wrap gap-2">
-        <button
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700/60"
-          type="button"
-          onClick={() => void onCopy()}
-        >
-          <Copy className="h-3.5 w-3.5" />
+        <Button icon={<Copy className="h-3.5 w-3.5" />} onClick={() => void onCopy()}>
           Copy
-        </button>
-        <button
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700/60"
-          type="button"
-          onClick={() => void onRefresh()}
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
+        </Button>
+        <Button icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={() => void onRefresh()}>
           Refresh
-        </button>
+        </Button>
         {!adminMode &&
           availableExtensions.map((ttlHours) => (
             <button
               key={ttlHours}
-              className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-transform hover:bg-emerald-500/20 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
               type="button"
               disabled={extendingTo !== null}
               onClick={() => void onExtendInbox(ttlHours)}
@@ -98,14 +89,9 @@ export function InboxHeader({
             </button>
           ))}
         {inbox && !inbox.isPermanent ? (
-          <button
-            className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/20"
-            type="button"
-            onClick={() => void onDeleteInbox()}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
+          <Button variant="danger" icon={<Trash2 className="h-3.5 w-3.5" />} onClick={() => void onDeleteInbox()}>
             {adminMode ? "Delete mailbox" : "Delete"}
-          </button>
+          </Button>
         ) : null}
       </div>
     </section>

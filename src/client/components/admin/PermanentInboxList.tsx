@@ -1,5 +1,6 @@
 import { Loader2, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Card, PageHeader } from "@/client/components/ui";
 import type { AdminInbox } from "@/client/lib/api";
 
 interface PermanentInboxListProps {
@@ -9,12 +10,12 @@ interface PermanentInboxListProps {
 
 export function PermanentInboxList({ inboxes, loading }: PermanentInboxListProps) {
   return (
-    <section className="rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-6">
-      <div className="mb-2 flex items-center gap-1.5">
-        <Mail className="h-3.5 w-3.5 text-zinc-500" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Permanent Inboxes</span>
-      </div>
-      <h2 className="text-lg font-semibold text-zinc-100">Available addresses</h2>
+    <Card>
+      <PageHeader
+        caption="Permanent Inboxes"
+        captionIcon={<Mail className="h-3.5 w-3.5 text-zinc-500" />}
+        heading="Available addresses"
+      />
 
       {loading ? (
         <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
@@ -32,7 +33,7 @@ export function PermanentInboxList({ inboxes, loading }: PermanentInboxListProps
         {inboxes.map((inbox) => (
           <Link
             key={inbox.address}
-            className="group rounded-xl border border-zinc-800/50 bg-zinc-800/30 p-4 hover:border-zinc-700/60 hover:bg-zinc-800/60"
+            className="group rounded-xl border border-zinc-800/50 bg-zinc-800/30 p-4 hover:border-zinc-700/60 hover:bg-zinc-800/60 hover:-translate-y-0.5 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
             to={`/inbox/${encodeURIComponent(inbox.address)}?admin=1`}
           >
             <span className="flex items-center justify-between">
@@ -48,6 +49,6 @@ export function PermanentInboxList({ inboxes, loading }: PermanentInboxListProps
           </Link>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

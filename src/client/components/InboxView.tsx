@@ -4,6 +4,7 @@ import { EmailDetail } from "@/client/components/EmailDetail";
 import { EmailList } from "@/client/components/EmailList";
 import { InboxHeader } from "@/client/components/inbox/InboxHeader";
 import { MissingInboxSessionState } from "@/client/components/inbox/MissingInboxSessionState";
+import { ErrorBanner } from "@/client/components/ui";
 import { useCountdown } from "@/client/hooks/useCountdown";
 import { useInbox } from "@/client/hooks/useInbox";
 import { useInboxPageActions } from "@/client/hooks/useInboxPageActions";
@@ -89,9 +90,7 @@ export function InboxView({ onDeleted }: InboxViewProps) {
         onRefresh={refresh}
       />
 
-      {error ? (
-        <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-400">{error}</p>
-      ) : null}
+      {error ? <ErrorBanner>{error}</ErrorBanner> : null}
 
       {/* Email list + detail — desktop: side-by-side, mobile: toggle */}
       <div className="grid gap-5 lg:grid-cols-[minmax(280px,400px)_minmax(0,1fr)]">

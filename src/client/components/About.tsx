@@ -30,10 +30,10 @@ const FEATURES = [
 
 export function About() {
   return (
-    <main className="animate-slide-up mx-auto max-w-3xl space-y-10 pt-2">
+    <div className="animate-slide-up mx-auto max-w-3xl space-y-10 pt-2">
       {/* Intro */}
       <section>
-        <h1 className="text-xl font-bold text-zinc-100 sm:text-2xl">About flamemail</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-100">About flamemail</h1>
         <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
           flamemail is a temporary email service that runs entirely on Cloudflare's developer platform. It provides
           disposable inboxes with real-time email delivery, sandboxed HTML rendering, and automatic cleanup — no
@@ -41,31 +41,34 @@ export function About() {
         </p>
       </section>
 
-      {/* Features */}
+      {/* Features — definition list instead of card grid */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Features</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Features</h2>
+        <dl className="mt-4 space-y-4">
           {FEATURES.map((f) => (
-            <div key={f.title} className="rounded-xl border border-zinc-800/60 bg-zinc-900/50 p-5">
-              <f.icon className="h-5 w-5 text-accent-400" />
-              <h3 className="mt-2 text-sm font-semibold text-zinc-200">{f.title}</h3>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-500">{f.desc}</p>
+            <div key={f.title}>
+              <dt className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
+                <f.icon className="h-4 w-4 text-accent-400" aria-hidden="true" />
+                {f.title}
+              </dt>
+              <dd className="mt-1 pl-6 text-sm leading-relaxed text-zinc-400">{f.desc}</dd>
             </div>
           ))}
-        </div>
+        </dl>
       </section>
 
       {/* Tech stack */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Technology stack</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Technology stack</h2>
         <div className="mt-4 space-y-2">
-          {STACK.map((s) => (
+          {STACK.map((s, i) => (
             <div
               key={s.label}
-              className="flex items-start gap-3 rounded-xl border border-zinc-800/50 bg-zinc-800/30 px-4 py-3"
+              className="animate-scale-fade opacity-0 flex items-start gap-3 rounded-xl border border-zinc-800/50 bg-zinc-800/30 px-4 py-3"
+              style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
             >
               <span className="inline-grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-500/10 text-accent-400">
-                <s.icon className="h-3.5 w-3.5" />
+                <s.icon className="h-3.5 w-3.5" aria-hidden="true" />
               </span>
               <div className="min-w-0">
                 <strong className="block text-sm font-medium text-zinc-200">{s.label}</strong>
@@ -78,7 +81,7 @@ export function About() {
 
       {/* How it works */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">How it works</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">How it works</h2>
         <ol className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-400">
           <li className="flex gap-3">
             <span className="inline-grid h-6 w-6 shrink-0 place-items-center rounded-full bg-zinc-800 text-xs font-semibold text-zinc-300">
@@ -118,6 +121,6 @@ export function About() {
           </li>
         </ol>
       </section>
-    </main>
+    </div>
   );
 }

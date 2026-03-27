@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Download, FileText, Loader2, Lock, MailOpen, Shield, Trash2 } from "lucide-react";
 import { toast } from "@/client/components/Toast";
+import { Button, Card, EmptyState } from "@/client/components/ui";
 import { prepareEmailHtml } from "@/client/lib/email-html";
 import {
   downloadAttachment,
@@ -142,29 +143,25 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
 
   if (loading && !email) {
     return (
-      <section className="flex min-h-[560px] items-center justify-center rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-6">
+      <Card className="flex min-h-[560px] items-center justify-center" aria-busy="true">
         <div className="flex items-center gap-3 text-sm text-zinc-500">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading message...
         </div>
-      </section>
+      </Card>
     );
   }
 
   if (!email) {
     return (
-      <section className="flex min-h-[560px] items-center justify-center rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-6">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <span className="inline-grid h-14 w-14 place-items-center rounded-full bg-zinc-800/60">
-            <MailOpen className="h-7 w-7 text-zinc-600" />
-          </span>
-          <div>
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-zinc-600">Viewer</span>
-            <h2 className="text-lg font-semibold text-zinc-300">Select an email</h2>
-            <p className="mt-2 max-w-sm text-sm text-zinc-500">Pick a message from the list to view its contents.</p>
-          </div>
-        </div>
-      </section>
+      <Card className="flex min-h-[560px] items-center justify-center">
+        <EmptyState
+          icon={<MailOpen className="h-7 w-7 text-zinc-600" />}
+          caption="Viewer"
+          heading="Select an email"
+          description="Pick a message from the list to view its contents."
+        />
+      </Card>
     );
   }
 
@@ -176,28 +173,25 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
           <h2 className="min-w-0 break-words text-base font-semibold text-zinc-100">{email.subject}</h2>
           <div className="flex shrink-0 items-center gap-2">
             {canViewRaw ? (
-              <button
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-2.5 py-1 text-xs font-medium text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800/90 hover:text-zinc-200 disabled:pointer-events-none disabled:opacity-50"
-                type="button"
+              <Button
+                icon={downloadingRaw ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
                 disabled={loading || downloadingRaw}
                 onClick={() => void handleViewRaw()}
               >
-                {downloadingRaw ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
                 View raw
-              </button>
+              </Button>
             ) : null}
             {canDelete ? (
-              <button
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-2.5 py-1 text-xs font-medium text-zinc-400 hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:pointer-events-none disabled:opacity-50"
-                type="button"
+              <Button
+                variant="danger"
+                icon={<Trash2 className="h-3 w-3" />}
                 disabled={loading}
                 onClick={() => onDelete(email.id)}
               >
-                <Trash2 className="h-3 w-3" />
                 Delete
-              </button>
+              </Button>
             ) : (
-              <span className="flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/40 px-2.5 py-1 text-xs font-medium text-zinc-500">
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/40 px-2.5 py-1 text-xs font-medium text-zinc-500">
                 <Lock className="h-3 w-3" />
                 Read-only
               </span>
