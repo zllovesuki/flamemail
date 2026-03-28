@@ -1,4 +1,4 @@
-import { Flame, Inbox, Info, Plus, Shield } from "lucide-react";
+import { Flame, Inbox, Plus, Shield } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 
 interface HeaderProps {
@@ -21,8 +21,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
 
         <nav className="flex items-center gap-1" aria-label="Primary">
           <NavLink
-            to="/"
-            end
+            to="/create"
             className={({ isActive }) =>
               `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 isActive ? "bg-accent-500/10 text-accent-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
@@ -38,17 +37,6 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
               <span className="text-xs">{sessionCount}</span>
             </span>
           ) : null}
-          <NavLink
-            to="/about"
-            className={({ isActive }) =>
-              `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                isActive ? "bg-accent-500/10 text-accent-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-              }`
-            }
-          >
-            <Info className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">About</span>
-          </NavLink>
           <NavLink
             to="/admin"
             className={({ isActive }) =>

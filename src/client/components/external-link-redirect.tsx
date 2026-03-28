@@ -80,7 +80,7 @@ export function ExternalLinkRedirect() {
                   {copied ? "Copied" : "Copy URL"}
                 </button>
                 <Link
-                  to="/"
+                  to="/create"
                   className="inline-flex items-center justify-center rounded-xl border border-zinc-800/80 bg-zinc-950/40 px-4 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-200"
                 >
                   Back to inboxes

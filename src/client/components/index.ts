@@ -1,4 +1,3 @@
-export { About } from "./about";
 export { AdminLogin } from "./admin-login";
 export { AppShell } from "./app-shell";
 export { CreateInbox } from "./create-inbox";

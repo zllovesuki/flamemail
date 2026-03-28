@@ -1,4 +1,5 @@
-import { Cloud, Database, Globe, HardDrive, Key, Mail, Radio, Shield, Terminal, Timer } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Cloud, Database, Globe, HardDrive, Key, Mail, Plus, Radio, Shield, Terminal, Timer } from "lucide-react";
 
 const STACK = [
   { icon: Cloud, label: "Cloudflare Workers", desc: "Serverless runtime for API, email handling, and cron cleanup" },
@@ -28,7 +29,7 @@ const FEATURES = [
   },
 ];
 
-export function About() {
+export function LandingPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-16 pt-8 pb-16">
       {/* Hero Showcase */}
@@ -44,6 +45,14 @@ export function About() {
           flamemail is a temporary email service that runs entirely on Cloudflare's developer platform. Real-time
           delivery, sandboxed HTML rendering, and automatic cleanup — no traditional server required.
         </p>
+
+        <Link
+          to="/create"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-accent-500/20 transition-colors hover:bg-accent-600"
+        >
+          <Plus className="h-4 w-4" />
+          Create an inbox
+        </Link>
 
         {/* Stylized Component Showcase (Mock Terminal / Pipeline) */}
         <div className="mt-12 w-full max-w-3xl overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/50 shadow-2xl shadow-accent-500/5">

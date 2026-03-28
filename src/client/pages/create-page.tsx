@@ -5,7 +5,7 @@ import { Card } from "@/client/components/ui";
 import type { AppShellContext } from "@/client/components/app-shell";
 import { fullDate } from "@/client/lib/time";
 
-export function HomePage() {
+export function CreatePage() {
   const { sessions, onCreated } = useOutletContext<AppShellContext>();
   const navigate = useNavigate();
 
