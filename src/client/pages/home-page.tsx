@@ -1,6 +1,6 @@
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { Clock, Mail } from "lucide-react";
-import { CreateInbox } from "@/client/components/CreateInbox";
+import { CreateInbox } from "@/client/components/create-inbox";
 import { Card } from "@/client/components/ui";
 import type { AppShellContext } from "@/client/components/app-shell";
 import { fullDate } from "@/client/lib/time";

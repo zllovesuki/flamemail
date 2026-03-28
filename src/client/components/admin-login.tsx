@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { KeyRound, Loader2, LogOut, Shield } from "lucide-react";
-import { TurnstileWidget } from "@/client/components/TurnstileWidget";
-import { DomainManager } from "@/client/components/admin/DomainManager";
-import { PermanentInboxList } from "@/client/components/admin/PermanentInboxList";
-import { TempInboxList } from "@/client/components/admin/TempInboxList";
-import { toast } from "@/client/components/Toast";
+import { TurnstileWidget } from "@/client/components/turnstile-widget";
+import { DomainManager } from "@/client/components/admin/domain-manager";
+import { PermanentInboxList } from "@/client/components/admin/permanent-inbox-list";
+import { TempInboxList } from "@/client/components/admin/temp-inbox-list";
+import { toast } from "@/client/components/toast";
 import { Button, Card, ErrorBanner } from "@/client/components/ui";
 import { useAdminSessionGuard } from "@/client/hooks/useAdminSessionGuard";
 import { useTurnstileForm } from "@/client/hooks/useTurnstileForm";

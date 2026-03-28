@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Globe, Loader2, Sparkles } from "lucide-react";
-import { TurnstileWidget } from "@/client/components/TurnstileWidget";
+import { TurnstileWidget } from "@/client/components/turnstile-widget";
 import { Button, Card, ErrorBanner } from "@/client/components/ui";
 import { useTurnstileForm } from "@/client/hooks/useTurnstileForm";
 import {
@@ -125,7 +125,7 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
           <select
             value={selectedDomain}
             onChange={(event) => setSelectedDomain(event.target.value)}
-            className="w-full rounded-xl border border-zinc-700/60 bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-100 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30"
+            className="w-full rounded-xl border border-zinc-700/60 bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-100 outline-none focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30"
           >
             {domains.length === 0 ? <option value="">No active domains</option> : null}
             {domains.map((domain) => (

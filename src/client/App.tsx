@@ -1,8 +1,8 @@
 import { Route, Routes } from "react-router-dom";
 import { AppShell } from "@/client/components/app-shell";
-import { About } from "@/client/components/About";
-import { AdminLogin } from "@/client/components/AdminLogin";
-import { ExternalLinkRedirect } from "@/client/components/ExternalLinkRedirect";
+import { About } from "@/client/components/about";
+import { AdminLogin } from "@/client/components/admin-login";
+import { ExternalLinkRedirect } from "@/client/components/external-link-redirect";
 import { HomePage, InboxPage } from "@/client/pages";
 
 export const App = () => (

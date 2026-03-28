@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AdminLogin } from "@/client/components/AdminLogin";
+import { AdminLogin } from "@/client/components/admin-login";
 
 const {
   adminLoginMock,

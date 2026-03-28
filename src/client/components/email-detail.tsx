@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Download, FileText, Loader2, Lock, MailOpen, Shield, Trash2 } from "lucide-react";
-import { toast } from "@/client/components/Toast";
+import { toast } from "@/client/components/toast";
 import { Button, Card, EmptyState } from "@/client/components/ui";
 import { prepareEmailHtml } from "@/client/lib/email-html";
 import {
@@ -170,7 +170,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
       {/* Header */}
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="min-w-0 break-words text-base font-semibold text-zinc-100">{email.subject}</h2>
+          <h2 className="min-w-0 wrap-break-word text-base font-semibold text-zinc-100">{email.subject}</h2>
           <div className="flex shrink-0 items-center gap-2">
             {canViewRaw ? (
               <Button

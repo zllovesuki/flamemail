@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
-import { EmailDetail } from "@/client/components/EmailDetail";
-import { EmailList } from "@/client/components/EmailList";
-import { InboxHeader } from "@/client/components/inbox/InboxHeader";
-import { MissingInboxSessionState } from "@/client/components/inbox/MissingInboxSessionState";
+import { EmailDetail } from "@/client/components/email-detail";
+import { EmailList } from "@/client/components/email-list";
+import { InboxHeader } from "@/client/components/inbox/inbox-header";
+import { MissingInboxSessionState } from "@/client/components/inbox/missing-inbox-session-state";
 import { ErrorBanner } from "@/client/components/ui";
 import { useCountdown } from "@/client/hooks/useCountdown";
 import { useInbox } from "@/client/hooks/useInbox";

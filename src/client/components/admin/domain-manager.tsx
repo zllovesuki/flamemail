@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Globe, Loader2, Plus, Power, PowerOff, Trash2 } from "lucide-react";
-import { toast } from "@/client/components/Toast";
+import { toast } from "@/client/components/toast";
 import { Badge, Button, Card, PageHeader } from "@/client/components/ui";
 import { useAdminSessionGuard } from "@/client/hooks/useAdminSessionGuard";
 import { addAdminDomain, deleteAdminDomain, updateAdminDomain, type AdminDomain } from "@/client/lib/api";

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/client/components/Toast";
+import { toast } from "@/client/components/toast";
 import {
   TEMP_MAILBOX_TTL_HOURS,
   deleteInbox,

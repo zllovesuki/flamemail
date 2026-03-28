@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CreateInbox } from "@/client/components/CreateInbox";
+import { CreateInbox } from "@/client/components/create-inbox";
 
 const { createInboxMock, getErrorMessageMock, isTurnstileErrorMock, listDomainsMock } = vi.hoisted(() => ({
   createInboxMock: vi.fn(),

@@ -1,7 +1,7 @@
 import { AlertTriangle, ArrowUpRight, Copy, Shield } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { toast } from "@/client/components/Toast";
+import { toast } from "@/client/components/toast";
 import { parseExternalLinkTarget } from "@/client/lib/external-link";
 
 export function ExternalLinkRedirect() {
