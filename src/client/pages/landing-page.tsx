@@ -48,7 +48,7 @@ export function LandingPage() {
 
         <Link
           to="/create"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-accent-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-accent-500/20 transition-colors hover:bg-accent-600"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-500 to-accent-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-accent-500/10 transition-transform hover:from-accent-400 hover:to-accent-500 active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
           Create an inbox
