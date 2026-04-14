@@ -40,7 +40,9 @@ export function AppShell() {
       <Header sessionCount={sessionCount} />
       <main id="main-content">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-          <Outlet context={context} />
+          <div className="animate-slide-up">
+            <Outlet context={context} />
+          </div>
         </div>
       </main>
       <Footer />

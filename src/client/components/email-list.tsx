@@ -21,7 +21,7 @@ export function EmailList({
   onSelect,
 }: EmailListProps) {
   return (
-    <aside className="flex max-h-[calc(100vh-220px)] min-h-[560px] flex-col rounded-2xl border border-zinc-800/60 bg-zinc-900/50">
+    <aside className="flex max-h-[calc(100vh-220px)] min-h-[560px] flex-col rounded-xl border border-zinc-800/60 bg-zinc-900">
       <div className="flex items-start justify-between gap-3 p-5 pb-0">
         <div>
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Messages</span>
@@ -31,7 +31,7 @@ export function EmailList({
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 px-5 pt-4 text-sm text-zinc-500" aria-busy="true">
+        <div className="flex items-center gap-2 px-5 pt-4 text-sm text-zinc-400" aria-busy="true">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Refreshing inbox...
         </div>
@@ -42,8 +42,8 @@ export function EmailList({
           <span className="inline-grid h-12 w-12 place-items-center rounded-full bg-zinc-800/60">
             <Mail className="h-6 w-6 text-zinc-600" />
           </span>
-          <p className="text-sm text-zinc-500">No emails have arrived yet.</p>
-          <p className="text-xs text-zinc-600">New messages will appear here automatically.</p>
+          <p className="text-sm text-zinc-400">No emails have arrived yet.</p>
+          <p className="text-xs text-zinc-500">New messages will appear here automatically.</p>
         </div>
       ) : null}
 
@@ -57,7 +57,7 @@ export function EmailList({
             <button
               key={email.id}
               type="button"
-              className={`animate-scale-fade opacity-0 group relative w-full rounded-xl border px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
+              className={`animate-scale-fade opacity-0 group relative w-full rounded-lg border px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${
                 active
                   ? "border-accent-500/30 bg-accent-500/5"
                   : "border-transparent bg-zinc-800/20 hover:border-zinc-700/60 hover:bg-zinc-800/40"

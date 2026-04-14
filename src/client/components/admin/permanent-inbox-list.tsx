@@ -18,13 +18,13 @@ export function PermanentInboxList({ inboxes, loading }: PermanentInboxListProps
       />
 
       {loading ? (
-        <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
+        <p className="mt-4 flex items-center gap-2 text-sm text-zinc-400">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Loading permanent inboxes...
         </p>
       ) : null}
       {!loading && inboxes.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-500">
+        <p className="mt-4 text-sm text-zinc-400">
           No permanent inboxes yet. They are created automatically when a domain is added.
         </p>
       ) : null}
@@ -33,7 +33,7 @@ export function PermanentInboxList({ inboxes, loading }: PermanentInboxListProps
         {inboxes.map((inbox) => (
           <Link
             key={inbox.address}
-            className="group rounded-xl border border-zinc-800/50 bg-zinc-800/30 p-4 hover:border-zinc-700/60 hover:bg-zinc-800/60 hover:-translate-y-0.5 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+            className="group rounded-lg border border-zinc-800/50 bg-zinc-800/30 p-4 hover:border-zinc-700/60 hover:bg-zinc-800/60 hover:-translate-y-0.5 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
             to={`/inbox/${encodeURIComponent(inbox.address)}?admin=1`}
           >
             <span className="flex items-center justify-between">
@@ -44,8 +44,8 @@ export function PermanentInboxList({ inboxes, loading }: PermanentInboxListProps
                 {inbox.emailCount} email{inbox.emailCount !== 1 ? "s" : ""}
               </span>
             </span>
-            <span className="mt-0.5 block text-xs text-zinc-500">{inbox.domain}</span>
-            <small className="mt-1 block truncate font-mono text-xs text-zinc-600">{inbox.address}</small>
+            <span className="mt-0.5 block text-xs text-zinc-400">{inbox.domain}</span>
+            <small className="mt-1 block truncate font-mono text-xs text-zinc-500">{inbox.address}</small>
           </Link>
         ))}
       </div>

@@ -18,7 +18,7 @@ export function PageHeader({ caption, captionIcon, heading, description, childre
         </div>
       ) : null}
       <h2 className="text-lg font-semibold text-zinc-100">{heading}</h2>
-      {description ? <p className="mt-2 text-sm text-zinc-500">{description}</p> : null}
+      {description ? <p className="mt-2 text-sm text-zinc-400">{description}</p> : null}
       {children}
     </div>
   );

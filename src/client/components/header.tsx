@@ -1,4 +1,4 @@
-import { Flame, Inbox, Plus, Shield } from "lucide-react";
+import { Flame, Inbox, Info, Shield } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 
 interface HeaderProps {
@@ -7,38 +7,40 @@ interface HeaderProps {
 
 export function Header({ sessionCount = 0 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-800/60 bg-zinc-950/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-zinc-800/60 bg-zinc-900/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
-          <span className="inline-grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-accent-500 to-accent-600 shadow-sm shadow-accent-500/10">
+          <span className="inline-grid h-9 w-9 place-items-center rounded-lg bg-accent-500">
             <Flame className="h-5 w-5 text-white" />
           </span>
           <span className="hidden sm:block">
             <strong className="block text-sm font-semibold text-zinc-100">flamemail</strong>
-            <small className="block text-xs text-zinc-500">Disposable inboxes on Cloudflare</small>
+            <small className="block text-xs text-zinc-400">Disposable inboxes on Cloudflare</small>
           </span>
         </Link>
 
         <nav className="flex items-center gap-1" aria-label="Primary">
+          {sessionCount > 0 ? (
+            <span className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-zinc-400">
+              <Inbox className="h-3.5 w-3.5" />
+              <span className="text-xs">{sessionCount}</span>
+            </span>
+          ) : null}
           <NavLink
-            to="/create"
+            to="/about"
+            aria-label="About"
             className={({ isActive }) =>
               `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 isActive ? "bg-accent-500/10 text-accent-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
               }`
             }
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Create</span>
+            <Info className="h-3.5 w-3.5" />
+            <span>About</span>
           </NavLink>
-          {sessionCount > 0 ? (
-            <span className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-zinc-500">
-              <Inbox className="h-3.5 w-3.5" />
-              <span className="text-xs">{sessionCount}</span>
-            </span>
-          ) : null}
           <NavLink
             to="/admin"
+            aria-label="Admin"
             className={({ isActive }) =>
               `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 isActive ? "bg-accent-500/10 text-accent-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
@@ -46,7 +48,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
             }
           >
             <Shield className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Admin</span>
+            <span>Admin</span>
           </NavLink>
         </nav>
       </div>

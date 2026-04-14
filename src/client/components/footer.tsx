@@ -2,7 +2,7 @@ import { Heart } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="mt-12 border-t border-zinc-800/60 py-6 text-center text-xs text-zinc-500">
+    <footer className="mt-12 border-t border-zinc-800/60 py-6 text-center text-xs text-zinc-400">
       <p className="flex items-center justify-center gap-1">
         Made with <Heart className="inline h-3 w-3 text-accent-500" /> on Cloudflare
       </p>
@@ -18,7 +18,7 @@ export function Footer() {
         Part of{" "}
         <a
           href="https://devbin.tools"
-          className="text-zinc-500 underline decoration-zinc-700 underline-offset-2 transition-colors hover:text-accent-400"
+          className="text-zinc-400 underline decoration-zinc-700 underline-offset-2 transition-colors hover:text-accent-400"
         >
           devbin.tools
         </a>

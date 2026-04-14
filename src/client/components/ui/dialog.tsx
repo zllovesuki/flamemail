@@ -47,7 +47,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
   return (
     <dialog
       ref={dialogRef}
-      className="m-auto max-w-lg rounded-2xl border border-zinc-800/60 bg-zinc-900 p-0 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+      className="m-auto max-w-lg rounded-xl border border-zinc-800/60 bg-zinc-900 p-0 shadow-2xl backdrop:bg-zinc-950/60 backdrop:backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === dialogRef.current) close();
       }}
@@ -58,7 +58,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
           <button
             type="button"
             onClick={close}
-            className="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+            className="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
             aria-label="Close"
           >
             <X className="h-4 w-4" />

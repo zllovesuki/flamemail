@@ -146,7 +146,7 @@ export function AdminLogin() {
             </span>
             <div>
               <h1 className="text-base font-semibold text-zinc-100">Admin console</h1>
-              <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+              <span className="flex items-center gap-1.5 text-xs text-zinc-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 Authenticated
               </span>
@@ -162,11 +162,11 @@ export function AdminLogin() {
             <Shield className="h-3.5 w-3.5 text-accent-400" />
             <span className="text-xs font-semibold uppercase tracking-wider text-accent-400">Reserved Access</span>
           </div>
-          <h1 className="text-xl font-semibold text-zinc-100">Admin console</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-zinc-100">Admin console</h1>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">
             Sign in with the admin password to manage domains, inspect temporary inboxes, and browse permanent inboxes.
           </p>
-          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+          <p className="mt-2 text-xs leading-relaxed text-zinc-400">
             Admin access is limited to this browser session and is cleared when you close the tab or sign out.
           </p>
 
@@ -181,7 +181,7 @@ export function AdminLogin() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Enter ADMIN_PASSWORD"
-                className="w-full rounded-xl border border-zinc-700/60 bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30"
+                className="w-full rounded-lg border border-zinc-700/60 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30"
               />
             </label>
 

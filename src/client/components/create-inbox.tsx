@@ -107,11 +107,11 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
       <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-wider text-accent-400">
         Instant Address
       </span>
-      <h2 className="text-lg font-semibold text-zinc-100">Create a temporary inbox</h2>
+      <h2 className="text-lg font-semibold tracking-tight text-zinc-100">Create a temporary inbox</h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-400">
         Get a disposable address that lives on this device until it expires. Emails arrive in real time.
       </p>
-      <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+      <p className="mt-2 text-xs leading-relaxed text-zinc-400">
         Plus aliases like <span className="font-medium text-zinc-400">name+tag@domain</span> route to the same inbox,
         and each message shows the exact delivered address.
       </p>
@@ -125,7 +125,7 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
           <select
             value={selectedDomain}
             onChange={(event) => setSelectedDomain(event.target.value)}
-            className="w-full rounded-xl border border-zinc-700/60 bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-100 outline-none focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30"
+            className="w-full rounded-lg border border-zinc-700/60 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 outline-none focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30"
           >
             {domains.length === 0 ? <option value="">No active domains</option> : null}
             {domains.map((domain) => (
@@ -148,10 +148,10 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
                   type="button"
                   onClick={() => setTtlHours(option.value)}
                   className={[
-                    "rounded-xl border px-4 py-3 text-left",
+                    "rounded-lg border px-4 py-3 text-left",
                     selected
                       ? "border-accent-500/50 bg-accent-500/10 text-zinc-100"
-                      : "border-zinc-700/60 bg-zinc-800/60 text-zinc-400 hover:bg-zinc-800",
+                      : "border-zinc-700/60 bg-zinc-800 text-zinc-400 hover:bg-zinc-700",
                   ].join(" ")}
                 >
                   <strong className="block text-sm font-semibold">{option.label}</strong>
@@ -183,14 +183,14 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
       </form>
 
       {loading ? (
-        <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500" aria-busy="true">
+        <p className="mt-4 flex items-center gap-2 text-sm text-zinc-400" aria-busy="true">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Loading available domains...
         </p>
       ) : null}
       {error ? <ErrorBanner className="mt-4">{error}</ErrorBanner> : null}
       {!loading && domains.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-500">No domains available yet. An admin needs to add one first.</p>
+        <p className="mt-4 text-sm text-zinc-400">No domains available yet. An admin needs to add one first.</p>
       ) : null}
     </Card>
   );

@@ -28,7 +28,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           aria-describedby={errorId ?? helperId}
           aria-invalid={error ? true : undefined}
           className={[
-            "w-full rounded-xl border border-zinc-700/60 bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:opacity-50",
+            "w-full rounded-lg border border-zinc-700/60 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:opacity-50",
             error && "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/30",
             className,
           ]
@@ -41,7 +41,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {error}
           </p>
         ) : helperText ? (
-          <p id={helperId} className="text-xs text-zinc-500">
+          <p id={helperId} className="text-xs text-zinc-400">
             {helperText}
           </p>
         ) : null}

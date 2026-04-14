@@ -144,7 +144,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
   if (loading && !email) {
     return (
       <Card className="flex min-h-[560px] items-center justify-center" aria-busy="true">
-        <div className="flex items-center gap-3 text-sm text-zinc-500">
+        <div className="flex items-center gap-3 text-sm text-zinc-400">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading message...
         </div>
@@ -166,11 +166,13 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
   }
 
   return (
-    <section className="flex min-h-[560px] flex-col rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-5">
+    <section className="flex min-h-[560px] flex-col rounded-xl border border-zinc-800/60 bg-zinc-900 p-5">
       {/* Header */}
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="min-w-0 wrap-break-word text-base font-semibold text-zinc-100">{email.subject}</h2>
+          <h2 className="min-w-0 wrap-break-word text-lg font-semibold tracking-tight text-zinc-100">
+            {email.subject}
+          </h2>
           <div className="flex shrink-0 items-center gap-2">
             {canViewRaw ? (
               <Button
@@ -201,13 +203,13 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
         <p className="mt-1 text-xs text-zinc-400">
           <span className="font-medium text-zinc-300">{email.fromName || email.fromAddress}</span>
           {email.fromName ? <span className="ml-1 text-zinc-500">&lt;{email.fromAddress}&gt;</span> : null}
-          <span className="mx-1.5 text-zinc-600">&middot;</span>
+          <span className="mx-1.5 text-zinc-500">&middot;</span>
           {fullDate(email.receivedAt)}
-          <span className="mx-1.5 text-zinc-600">&middot;</span>
+          <span className="mx-1.5 text-zinc-500">&middot;</span>
           {formatSize(email.sizeBytes)}
         </p>
         {email.recipientAddress ? (
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-zinc-400">
             Delivered to <span className="font-medium text-zinc-300">{email.recipientAddress}</span>
           </p>
         ) : null}
@@ -235,7 +237,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
                   <strong className="block text-xs font-medium text-zinc-300">
                     {attachment.filename || "attachment.bin"}
                   </strong>
-                  <span className="text-xs text-zinc-500">{formatSize(attachment.sizeBytes)}</span>
+                  <span className="text-xs text-zinc-400">{formatSize(attachment.sizeBytes)}</span>
                 </span>
               </button>
             );
@@ -265,7 +267,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
           </div>
 
           <iframe
-            className="min-h-[520px] w-full flex-1 rounded-xl border border-zinc-800/60 bg-zinc-900"
+            className="min-h-[520px] w-full flex-1 rounded-lg border border-zinc-800/60 bg-zinc-900"
             title={`Email ${email.id}`}
             sandbox="allow-popups allow-popups-to-escape-sandbox"
             referrerPolicy="no-referrer"
@@ -278,7 +280,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
             <FileText className="h-3.5 w-3.5" />
             Plain text
           </div>
-          <pre className="overflow-auto rounded-xl border border-zinc-800/60 bg-zinc-800/30 p-5 text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
+          <pre className="overflow-auto rounded-lg border border-zinc-800/60 bg-zinc-800/30 p-5 text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
             {email.text || "This email has no text content."}
           </pre>
         </div>

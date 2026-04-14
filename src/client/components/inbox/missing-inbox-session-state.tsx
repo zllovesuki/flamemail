@@ -6,10 +6,10 @@ export function MissingInboxSessionState() {
     <main className="animate-slide-up">
       <Card className="flex min-h-[320px] items-center justify-center">
         <EmptyState
-          icon={<ShieldAlert className="h-7 w-7 text-zinc-600" />}
+          icon={<ShieldAlert className="h-7 w-7 text-zinc-500" />}
           caption="Missing Session"
-          heading="This inbox is not stored locally"
-          description="Open it from the device that created it before the inbox expires, or sign in as an admin for permanent inboxes."
+          heading="No access token for this inbox"
+          description="The access token lives on the device that created it. Open that browser before the inbox expires, or sign in as admin to inspect permanent inboxes."
         />
       </Card>
     </main>

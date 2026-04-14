@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Clock, Copy, RefreshCw, Timer, Trash2, ShieldAlert } from "lucide-react";
-import { Button } from "@/client/components/ui";
+import { Button, Dialog } from "@/client/components/ui";
 import type { InboxInfo, TempMailboxTtlHours } from "@/client/lib/api";
 
 const socketColors: Record<string, string> = {
@@ -39,25 +40,27 @@ export function InboxHeader({
   onExtendInbox,
   onRefresh,
 }: InboxHeaderProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-zinc-800/60 bg-zinc-900/50 p-5 sm:flex-row sm:items-center sm:justify-between">
+    <section className="flex flex-col gap-4 rounded-xl border border-zinc-800/60 bg-zinc-900 p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-accent-400">Live Inbox</span>
           <span className={`h-1.5 w-1.5 rounded-full ${socketColors[socketState] ?? "bg-zinc-600"}`} />
-          <span className="text-xs text-zinc-500">{socketState}</span>
+          <span className="text-xs text-zinc-400">{socketState}</span>
         </div>
         <h1 className="mt-1 truncate text-lg font-semibold text-zinc-100">{address}</h1>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
           {inbox?.isPermanent ? (
-            <span className="text-sm text-zinc-500">Permanent inbox</span>
+            <span className="text-sm text-zinc-400">Permanent inbox</span>
           ) : countdown ? (
-            <span className="flex items-center gap-1.5 text-sm text-zinc-500">
+            <span className="flex items-center gap-1.5 text-sm text-zinc-400">
               <Timer className="h-3.5 w-3.5 text-accent-400" />
               {countdown}
             </span>
           ) : (
-            <span className="text-sm text-zinc-500">Loading inbox details...</span>
+            <span className="text-sm text-zinc-400">Loading inbox details...</span>
           )}
         </div>
         {isAdminInspectingTemporaryInbox ? (
@@ -79,7 +82,7 @@ export function InboxHeader({
           availableExtensions.map((ttlHours) => (
             <button
               key={ttlHours}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-transform hover:bg-emerald-500/20 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition-transform hover:bg-emerald-500/20 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
               type="button"
               disabled={extendingTo !== null}
               onClick={() => void onExtendInbox(ttlHours)}
@@ -89,11 +92,31 @@ export function InboxHeader({
             </button>
           ))}
         {inbox && !inbox.isPermanent ? (
-          <Button variant="danger" icon={<Trash2 className="h-3.5 w-3.5" />} onClick={() => void onDeleteInbox()}>
+          <Button variant="danger" icon={<Trash2 className="h-3.5 w-3.5" />} onClick={() => setConfirmDelete(true)}>
             {adminMode ? "Delete mailbox" : "Delete"}
           </Button>
         ) : null}
       </div>
+
+      <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete this inbox?">
+        <p className="text-sm text-zinc-400">
+          This will permanently delete <strong className="text-zinc-200">{address}</strong> and all its emails. This
+          action cannot be undone.
+        </p>
+        <div className="mt-5 flex justify-end gap-3">
+          <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
+          <Button
+            variant="danger"
+            icon={<Trash2 className="h-3.5 w-3.5" />}
+            onClick={() => {
+              setConfirmDelete(false);
+              void onDeleteInbox();
+            }}
+          >
+            Delete permanently
+          </Button>
+        </div>
+      </Dialog>
     </section>
   );
 }

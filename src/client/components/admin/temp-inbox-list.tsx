@@ -83,7 +83,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
             <Filter className="h-3 w-3" />
             {hasEmails ? "With emails" : "All"}
           </button>
-          <span className="whitespace-nowrap rounded-full border border-zinc-800/60 bg-zinc-900 px-3 py-1 text-xs text-zinc-500">
+          <span className="whitespace-nowrap rounded-full border border-zinc-800/60 bg-zinc-900 px-3 py-1 text-xs text-zinc-400">
             {total} active mailbox{total !== 1 ? "es" : ""}
           </span>
         </div>
@@ -92,13 +92,13 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
       {error ? <ErrorBanner className="mt-5">{error}</ErrorBanner> : null}
 
       {loading ? (
-        <p className="mt-5 flex items-center gap-2 text-sm text-zinc-500">
+        <p className="mt-5 flex items-center gap-2 text-sm text-zinc-400">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Loading active temporary inboxes...
         </p>
       ) : null}
       {!loading && !error && inboxes.length === 0 ? (
-        <p className="mt-5 text-sm text-zinc-500">
+        <p className="mt-5 text-sm text-zinc-400">
           {hasEmails
             ? "No active temporary inboxes with emails right now."
             : "There are no active temporary inboxes right now."}
@@ -107,14 +107,14 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
 
       <div className="mt-5 space-y-3">
         {inboxes.map((inbox) => (
-          <div key={inbox.address} className="rounded-xl border border-zinc-800/50 bg-zinc-800/30 p-4">
+          <div key={inbox.address} className="rounded-lg border border-zinc-800/50 bg-zinc-800/30 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
                 <strong className="block truncate text-sm font-semibold text-zinc-200">{inbox.address}</strong>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-zinc-400">
                   Created {fullDate(inbox.createdAt)} · Expires {inbox.expiresAt ? fullDate(inbox.expiresAt) : "never"}
                 </p>
-                <p className="mt-1 text-xs text-zinc-600">
+                <p className="mt-1 text-xs text-zinc-500">
                   {inbox.domain} · {inbox.ttlHours ? `${inbox.ttlHours}h lifetime` : "temporary"} ·{" "}
                   <span className="font-medium text-zinc-400">
                     {inbox.emailCount} email{inbox.emailCount !== 1 ? "s" : ""}
@@ -135,7 +135,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
       </div>
 
       {total > pageSize ? (
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800/60 pt-4 text-sm text-zinc-500">
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800/60 pt-4 text-sm text-zinc-400">
           <span>
             Page {page + 1} of {totalPages}
           </span>

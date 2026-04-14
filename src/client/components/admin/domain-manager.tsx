@@ -95,10 +95,10 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
           onChange={(event) => setNewDomain(event.target.value)}
           placeholder="example.com"
           disabled={busy === "add"}
-          className="w-full rounded-xl border border-zinc-700/60 bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30 disabled:opacity-50"
+          className="w-full rounded-lg border border-zinc-700/60 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30 disabled:opacity-50"
         />
 
-        <label className="flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-800/60 px-3 py-2.5 text-sm text-zinc-300">
+        <label className="flex items-center gap-2 rounded-lg border border-zinc-700/60 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-300">
           <input
             type="checkbox"
             checked={newDomainActive}
@@ -123,18 +123,18 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
 
       <div className="mt-5 space-y-3">
         {loading ? (
-          <p className="flex items-center gap-2 text-sm text-zinc-500">
+          <p className="flex items-center gap-2 text-sm text-zinc-400">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             Loading domains...
           </p>
         ) : null}
-        {!loading && domains.length === 0 ? <p className="text-sm text-zinc-500">No domains configured yet.</p> : null}
+        {!loading && domains.length === 0 ? <p className="text-sm text-zinc-400">No domains configured yet.</p> : null}
 
         {domains.map((domain) => {
           const isBusy = busy === domain.domain;
 
           return (
-            <div key={domain.domain} className="rounded-xl border border-zinc-800/50 bg-zinc-800/30 p-4">
+            <div key={domain.domain} className="rounded-lg border border-zinc-800/50 bg-zinc-800/30 p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -146,7 +146,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
                       {domain.isActive ? "active" : "disabled"}
                     </Badge>
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-zinc-400">
                     Added {fullDate(domain.createdAt)} · {domain.inboxCount} inbox
                     {domain.inboxCount !== 1 ? "es" : ""}
                   </p>
