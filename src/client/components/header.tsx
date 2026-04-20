@@ -9,9 +9,13 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800/60 bg-zinc-900/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
-          <span className="inline-grid h-9 w-9 place-items-center rounded-lg bg-accent-500">
-            <Flame className="h-5 w-5 text-white" />
+        <Link to="/" className="group flex items-center gap-3 transition-opacity hover:opacity-80">
+          <span className="inline-grid h-9 w-9 place-items-center">
+            <Flame
+              className="h-6 w-6 text-accent-400 transition-transform duration-200 group-hover:-rotate-6"
+              strokeWidth={2}
+              aria-hidden="true"
+            />
           </span>
           <span className="hidden sm:block">
             <strong className="block text-sm font-semibold text-zinc-100">flamemail</strong>
