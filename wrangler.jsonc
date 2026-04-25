@@ -56,7 +56,7 @@
 			"custom_domain": true,
 		},
 		{
-			"pattern": "mail.edgenative.dev",
+			"pattern": "mail.limic.dev",
 			"custom_domain": true,
 		},
 	],
