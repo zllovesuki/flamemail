@@ -12,19 +12,23 @@ const STACK = [
 const FEATURES = [
   {
     icon: Timer,
-    title: "Temporary inboxes",
-    desc: "Create a disposable address that self-destructs after 24, 48, or 72 hours.",
+    title: "Test inboxes",
+    desc: "Spin up an address with a 24, 48, or 72-hour TTL. Auto-cleanup when it expires.",
   },
-  { icon: Radio, title: "Real-time delivery", desc: "Emails appear instantly via WebSocket — no polling, no refresh." },
+  {
+    icon: Radio,
+    title: "Real-time delivery",
+    desc: "Emails land via WebSocket the moment your app sends them. No polling, no refresh.",
+  },
   {
     icon: Globe,
-    title: "Multi-domain",
-    desc: "Bring your own domains. Each one gets catch-all routing and reserved admin mailboxes.",
+    title: "Bring your own domain",
+    desc: "Wire up a domain — every address on it catches mail. Match the domain your app uses in production.",
   },
   {
     icon: Shield,
     title: "Admin dashboard",
-    desc: "Manage domains, inspect temporary inboxes, and monitor permanent mailboxes.",
+    desc: "Manage domains, inspect active test inboxes, and monitor permanent mailboxes.",
   },
 ];
 
@@ -41,8 +45,7 @@ export function AboutPage() {
           How flamemail works
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-400 sm:text-lg">
-          A temporary email service that runs entirely on Cloudflare's developer platform. No traditional server
-          required.
+          Catch-all email testing for developers, running entirely on Cloudflare's edge.
         </p>
 
         {/* Code snippet */}

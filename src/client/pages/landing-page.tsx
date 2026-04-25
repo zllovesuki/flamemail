@@ -14,11 +14,11 @@ export function LandingPage() {
       {/* Compact hero */}
       <section className="text-center">
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-zinc-100 sm:text-4xl">
-          Disposable inboxes on the Edge.
+          Test inboxes for transactional email.
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
-          Temporary email that self-destructs. Real-time delivery, sandboxed HTML, automatic cleanup — no signup
-          required.
+          Real addresses that catch real email. Watch signup confirmations, password resets, and magic links land the
+          moment your app sends them.
         </p>
       </section>
 
@@ -39,7 +39,7 @@ export function LandingPage() {
 
           {sessions.length === 0 ? (
             <p className="mt-4 text-sm leading-relaxed text-zinc-400">
-              No inboxes yet. Created addresses are saved on this device and removed when they expire.
+              No inboxes yet. They'll show up here when you create one.
             </p>
           ) : (
             <div className="mt-4 space-y-1.5">

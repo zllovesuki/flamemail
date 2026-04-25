@@ -1,6 +1,6 @@
-# flamemail: Temporary Email System on Cloudflare
+# flamemail: Transactional Email Testing on Cloudflare
 
-A serverless temporary email service running entirely on Cloudflare's platform. Users get disposable email addresses, receive emails in real-time via WebSocket, and view them in a React WebUI. Inbound plus aliases like `localpart+tag@domain.com` route into the base inbox while preserving the exact delivered recipient on each email.
+A serverless transactional-email testing service running entirely on Cloudflare's platform. Developers get catch-all test addresses, receive emails in real-time via WebSocket, and inspect them in a React WebUI. Inbound plus aliases like `localpart+tag@domain.com` route into the base inbox while preserving the exact delivered recipient on each email.
 
 ---
 

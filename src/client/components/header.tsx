@@ -19,7 +19,7 @@ export function Header({ sessionCount = 0 }: HeaderProps) {
           </span>
           <span className="hidden sm:block">
             <strong className="block text-sm font-semibold text-zinc-100">flamemail</strong>
-            <small className="block text-xs text-zinc-400">Disposable inboxes on Cloudflare</small>
+            <small className="block text-xs text-zinc-400">Catch what your app sends</small>
           </span>
         </Link>
 

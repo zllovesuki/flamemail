@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`flamemail` is a disposable email service on Cloudflare's edge. It has a React SPA frontend and a Cloudflare Worker backend for HTTP APIs, Turnstile-backed inbox and admin flows, inbound email ingestion, WebSocket fanout, and scheduled cleanup.
+`flamemail` is a transactional-email testing service on Cloudflare's edge — developers get catch-all test inboxes to inspect what their apps send. It has a React SPA frontend and a Cloudflare Worker backend for HTTP APIs, Turnstile-backed inbox and admin flows, inbound email ingestion, WebSocket fanout, and scheduled cleanup.
 
 Use this file to keep changes safe and repo-appropriate.
 

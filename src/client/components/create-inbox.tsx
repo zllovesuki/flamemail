@@ -107,13 +107,13 @@ export function CreateInbox({ onCreated }: CreateInboxProps) {
       <span className="mb-2 inline-block text-xs font-semibold uppercase tracking-wider text-accent-400">
         Instant Address
       </span>
-      <h2 className="text-lg font-semibold tracking-tight text-zinc-100">Create a temporary inbox</h2>
+      <h2 className="text-lg font-semibold tracking-tight text-zinc-100">Spin up a test inbox</h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-        Get a disposable address that lives on this device until it expires. Emails arrive in real time.
+        Get a real address. Paste it into your app. Watch the mail land the moment it's sent.
       </p>
       <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-        Plus aliases like <span className="font-medium text-zinc-400">name+tag@domain</span> route to the same inbox,
-        and each message shows the exact delivered address.
+        Plus aliases (<span className="font-medium text-zinc-400">name+tag@domain</span>) all hit the same inbox; each
+        message shows the exact recipient.
       </p>
 
       <form className="mt-5 space-y-4" onSubmit={handleSubmit}>

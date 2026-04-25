@@ -55,5 +55,9 @@
 			"pattern": "flamemail.devbin.tools",
 			"custom_domain": true,
 		},
+		{
+			"pattern": "mail.edgenative.dev",
+			"custom_domain": true,
+		},
 	],
 }

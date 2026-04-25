@@ -1,8 +1,8 @@
 # 🔥 flamemail
 
-**Disposable email inboxes that run entirely on Cloudflare's edge — no servers, no maintenance, no fuss.**
+**Catch-all test inboxes for developers shipping transactional email — running entirely on Cloudflare's edge.**
 
-Create a temporary address, receive mail in real-time, and watch it auto-destruct when the clock runs out. Perfect for sign-up confirmations, testing, or anywhere you need a throwaway inbox.
+Spin up a temporary address, point your app at it, and inspect every transactional email it sends — signup confirmations, password resets, magic links, receipts. Real delivery, real-time arrival, sandboxed rendering, auto-cleanup. No SMTP capture to configure, no signup.
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/zllovesuki/flamemail)
 
@@ -13,9 +13,9 @@ Create a temporary address, receive mail in real-time, and watch it auto-destruc
 
 ## ✨ Highlights
 
-- **Instant temporary inboxes** — one click, no sign-up required
+- **Instant test inboxes** — one click, no sign-up required
 - **Real-time delivery** — emails appear the moment they arrive via WebSocket
-- **Self-destructing** — inboxes auto-expire after 24 / 48 / 72 hours
+- **Auto-cleanup** — inboxes auto-expire after 24 / 48 / 72 hours
 - **Plus aliases** — `name+tag@domain.com` routes to the base inbox; the original recipient is preserved per message
 - **Multi-domain** — serve as many domains as you like from one deployment
 - **Secure rendering** — HTML emails displayed in a sandboxed iframe
