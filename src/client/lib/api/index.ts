@@ -13,6 +13,9 @@ export type {
   TempMailboxTtlHours,
 } from "@/shared/contracts";
 
+export type { AuthDescriptor } from "./shared";
+export { ApiError } from "./http";
+
 export * from "./admin";
 export * from "./emails";
 export * from "./errors";

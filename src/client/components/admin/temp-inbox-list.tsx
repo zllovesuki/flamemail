@@ -8,11 +8,10 @@ import { fullDate } from "@/client/lib/time";
 import { ADMIN_TEMP_INBOX_PAGE_SIZE } from "@/shared/contracts";
 
 interface TempInboxListProps {
-  token: string;
   onSessionError: (message?: string) => void;
 }
 
-export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
+export function TempInboxList({ onSessionError }: TempInboxListProps) {
   const [inboxes, setInboxes] = useState<AdminTempInbox[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
@@ -30,7 +29,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
       setError(null);
 
       try {
-        const results = await listAdminTempInboxes(token, page, hasEmails);
+        const results = await listAdminTempInboxes(page, hasEmails);
         if (!active) return;
         setInboxes(results.inboxes);
         setTotal(results.total);
@@ -47,7 +46,7 @@ export function TempInboxList({ token, onSessionError }: TempInboxListProps) {
     return () => {
       active = false;
     };
-  }, [handleAdminError, hasEmails, page, token]);
+  }, [handleAdminError, hasEmails, page]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 

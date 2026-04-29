@@ -16,6 +16,21 @@ const sizeClasses = {
 export type ButtonVariant = keyof typeof variantClasses;
 export type ButtonSize = keyof typeof sizeClasses;
 
+const baseClasses =
+  "inline-flex items-center justify-center transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:pointer-events-none disabled:opacity-50";
+
+export function buttonClasses({
+  variant = "secondary",
+  size = "sm",
+  className,
+}: {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+} = {}) {
+  return [baseClasses, variantClasses[variant], sizeClasses[size], className].filter(Boolean).join(" ");
+}
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -28,14 +43,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={[
-          "inline-flex items-center justify-center transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:pointer-events-none disabled:opacity-50",
-          variantClasses[variant],
-          sizeClasses[size],
-          className,
-        ]
-          .filter(Boolean)
-          .join(" ")}
+        className={buttonClasses({ variant, size, className })}
         disabled={disabled || loading}
         {...rest}
       >

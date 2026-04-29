@@ -4,6 +4,9 @@
 	"main": "src/worker/index.ts",
 	"workers_dev": false,
 	"compatibility_date": "2026-03-13",
+	"vars": {
+		"TESSERA_OIDC_ISSUER": "https://auth.limic.dev",
+	},
 	"assets": {
 		"directory": "./dist/client",
 		"binding": "ASSETS",
@@ -51,10 +54,6 @@
 		"enabled": true,
 	},
 	"routes": [
-		{
-			"pattern": "flamemail.devbin.tools",
-			"custom_domain": true,
-		},
 		{
 			"pattern": "mail.limic.dev",
 			"custom_domain": true,

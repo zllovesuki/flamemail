@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   EMAIL_PAGE_SIZE,
   deleteEmail as deleteEmailRequest,
@@ -6,6 +6,7 @@ import {
   getErrorMessage,
   getInbox,
   listEmails,
+  type AuthDescriptor,
   type EmailDetail,
   type EmailSummary,
   type InboxInfo,
@@ -13,7 +14,7 @@ import {
 
 interface SessionTarget {
   address: string;
-  token: string;
+  auth: AuthDescriptor;
 }
 
 interface UseInboxOptions {
@@ -22,8 +23,18 @@ interface UseInboxOptions {
 
 export function useInbox(session: SessionTarget | null, options: UseInboxOptions = {}) {
   const address = session?.address ?? null;
-  const token = session?.token ?? null;
+  const sessionAuth = session?.auth ?? null;
   const markReadOnOpen = options.markReadOnOpen ?? true;
+
+  // Stable auth identity across renders so useCallback deps do not
+  // retrigger when the parent rebuilds the descriptor.
+  const authMode = sessionAuth?.mode ?? "none";
+  const userToken = sessionAuth?.mode === "user" ? sessionAuth.token : "";
+  const auth = useMemo<AuthDescriptor | null>(() => {
+    if (authMode === "user") return { mode: "user", token: userToken };
+    if (authMode === "admin") return { mode: "admin" };
+    return null;
+  }, [authMode, userToken]);
 
   const [inbox, setInbox] = useState<InboxInfo | null>(null);
   const [emails, setEmails] = useState<EmailSummary[]>([]);
@@ -50,7 +61,7 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
 
   const loadEmailDetail = useCallback(
     async (emailId: string) => {
-      if (!address || !token || !emailId) {
+      if (!address || !auth || !emailId) {
         setSelectedEmail(null);
         return null;
       }
@@ -58,7 +69,7 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
       setEmailLoading(true);
 
       try {
-        const detail = await getEmail(address, emailId, token);
+        const detail = await getEmail(address, emailId, auth);
         setSelectedEmail(detail);
         markEmailRead(emailId);
         return detail;
@@ -66,33 +77,33 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
         setEmailLoading(false);
       }
     },
-    [address, markEmailRead, token],
+    [address, auth, markEmailRead],
   );
 
   const refreshInbox = useCallback(async () => {
-    if (!address || !token) {
+    if (!address || !auth) {
       setInbox(null);
       return null;
     }
 
-    const inboxInfo = await getInbox(address, token);
+    const inboxInfo = await getInbox(address, auth);
     setInbox(inboxInfo);
     return inboxInfo;
-  }, [address, token]);
+  }, [address, auth]);
 
   const refreshEmails = useCallback(
     async ({
       includeTotal = false,
       refreshSelected = false,
     }: { includeTotal?: boolean; refreshSelected?: boolean } = {}) => {
-      if (!address || !token) {
+      if (!address || !auth) {
         setEmails([]);
         setSelectedEmail(null);
         setSelectedEmailId(null);
         return null;
       }
 
-      const emailPage = await listEmails(address, token, {
+      const emailPage = await listEmails(address, auth, {
         includeTotal,
       });
 
@@ -119,12 +130,12 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
 
       return emailPage;
     },
-    [address, loadEmailDetail, token],
+    [address, auth, loadEmailDetail],
   );
 
   const selectEmail = useCallback(
     async (emailId: string) => {
-      if (!address || !token) {
+      if (!address || !auth) {
         return;
       }
 
@@ -143,11 +154,11 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
         setError(getErrorMessage(nextError));
       }
     },
-    [address, loadEmailDetail, token],
+    [address, auth, loadEmailDetail],
   );
 
   const refresh = useCallback(async () => {
-    if (!address || !token) {
+    if (!address || !auth) {
       setInbox(null);
       setEmails([]);
       setSelectedEmail(null);
@@ -169,24 +180,24 @@ export function useInbox(session: SessionTarget | null, options: UseInboxOptions
       setLoading(false);
       setEmailLoading(false);
     }
-  }, [address, refreshEmails, refreshInbox, token]);
+  }, [address, auth, refreshEmails, refreshInbox]);
 
   const deleteEmail = useCallback(
     async (emailId: string) => {
-      if (!address || !token) {
+      if (!address || !auth) {
         return;
       }
 
       setError(null);
 
       try {
-        await deleteEmailRequest(address, emailId, token);
+        await deleteEmailRequest(address, emailId, auth);
         await refreshEmails({ refreshSelected: selectedEmailIdRef.current === emailId });
       } catch (nextError) {
         setError(getErrorMessage(nextError));
       }
     },
-    [address, refreshEmails, token],
+    [address, auth, refreshEmails],
   );
 
   const applyIncomingEmail = useCallback(

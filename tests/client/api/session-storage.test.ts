@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { setStoredBookmark, getStoredBookmark } from "@/client/lib/api/bookmarks";
 import {
-  clearAdminToken,
-  getAdminToken,
+  clearAdminBookmark,
   getInboxSession,
   loadInboxSessions,
   removeInboxSession,
-  setAdminToken,
   storeInboxSession,
   updateInboxSession,
 } from "@/client/lib/api/session-storage";
@@ -179,13 +177,11 @@ describe("client inbox session storage", () => {
     expect(getInboxSession(session.address)).toBeNull();
   });
 
-  it("clears the admin token and admin bookmark scope", () => {
-    setAdminToken("tok_admin");
+  it("clears the admin bookmark scope on logout", () => {
     setStoredBookmark(ADMIN_BOOKMARK_SCOPE, "bookmark-admin");
 
-    clearAdminToken();
+    clearAdminBookmark();
 
-    expect(getAdminToken()).toBeNull();
     expect(getStoredBookmark(ADMIN_BOOKMARK_SCOPE)).toBeNull();
   });
 });

@@ -19,7 +19,8 @@ Spin up a temporary address, point your app at it, and inspect every transaction
 - **Plus aliases** — `name+tag@domain.com` routes to the base inbox; the original recipient is preserved per message
 - **Multi-domain** — serve as many domains as you like from one deployment
 - **Secure rendering** — HTML emails displayed in a sandboxed iframe
-- **Human verification** — Cloudflare Turnstile protects inbox creation and admin login
+- **Human verification** — Cloudflare Turnstile protects anonymous inbox creation
+- **Operator sign-in via tessera** — admin access requires a tessera OIDC sign-in matched against an operator allowlist
 - **Zero infrastructure** — 100% Cloudflare edge: Workers, D1, R2, KV, Durable Objects
 - **Replica-aware reads** — request-scoped D1 Sessions + bookmarks keep inbox reads sequentially consistent when read replication is enabled
 - **Admin panel** — manage domains, inspect inboxes, and browse seeded permanent inboxes
@@ -40,14 +41,14 @@ npm run dev
 
 That's it — open the URL printed in your terminal and create your first inbox.
 
-Local development uses the Cloudflare Turnstile test keys in `.dev.vars.example`, so inbox creation works out of the box after copying the file. To use the admin panel locally, replace the placeholder `ADMIN_PASSWORD` in `.dev.vars` with a strong value, for example via `npm run admin:password`. Replace the Turnstile keys with a real widget's keys before deploying a public instance.
+Local development uses the Cloudflare Turnstile test keys in `.dev.vars.example`, so inbox creation works out of the box after copying the file. The admin panel signs in via tessera OIDC; for local development run `npm run oidc:local` alongside the dev server (the e2e suite starts a mock provider automatically) and keep the matching `TESSERA_OIDC_*` values in `.dev.vars`. Replace the Turnstile keys and tessera config with production values before deploying a public instance.
 
 ### Handy Scripts
 
 | Command                  | What it does                              |
 | ------------------------ | ----------------------------------------- |
 | `npm run dev`            | Start the local dev server                |
-| `npm run admin:password` | Generate a strong local admin password    |
+| `npm run oidc:local`     | Start a local mock OIDC provider          |
 | `npm run email:local`    | Send a test email to the local worker     |
 | `npm run db:local:reset` | Wipe and re-migrate the local D1 database |
 | `npm run check`          | Type-check the entire project             |
@@ -99,16 +100,20 @@ This applies remote D1 migrations and then runs `wrangler deploy`.
 
 1. A **Cloudflare account** with Workers, Durable Objects, D1, R2, and KV enabled.
 2. **[Email Routing](https://developers.cloudflare.com/email-routing/)** enabled for each domain, with a catch-all rule pointing to this worker.
-3. An **`ADMIN_PASSWORD`** secret:
-   ```bash
-   wrangler secret put ADMIN_PASSWORD
-   ```
-   Must be ≥ 16 characters with at least 3 of 4 character classes (lowercase, uppercase, digit, symbol). Admin APIs fail closed if this is missing or too weak.
+3. A **tessera OIDC client** registered for flamemail:
+   - Redirect URI — register `https://<your-flamemail-host>/api/public/admin/callback` in tessera. For local dev with Vite's default URL, use `http://localhost:<port>/api/public/admin/callback`; if you open flamemail through another origin, register that exact origin instead.
+   - `TESSERA_OIDC_ISSUER` (var) — tessera issuer URL used for OIDC discovery, e.g. `https://auth.limic.dev`
+   - `TESSERA_OIDC_CLIENT_ID` (secret) — client id minted in tessera's `/admin/clients`; set with `wrangler secret put TESSERA_OIDC_CLIENT_ID`
+   - `TESSERA_OIDC_CLIENT_SECRET` (secret) — `wrangler secret put TESSERA_OIDC_CLIENT_SECRET`
+   - `TESSERA_OPERATOR_SUBS` (secret) — comma-separated tessera UUID `sub` values allowed to access the admin panel; set with `wrangler secret put TESSERA_OPERATOR_SUBS`
+
+   Admin sign-in fails closed if these are missing or the issuer's OIDC discovery document cannot be loaded. Multiple operators are supported via the comma-separated allowlist.
+
 4. A **Cloudflare Turnstile widget** for your deployed hostname, plus Worker environment values for:
    - `TURNSTILE_SITE_KEY` — public site key returned by `/api/public/config`
    - `TURNSTILE_SECRET_KEY` — secret used by the Worker to verify challenge responses
 
-   If Turnstile is not configured, flamemail fails closed and blocks inbox creation plus admin login.
+   If Turnstile is not configured, flamemail fails closed and blocks anonymous inbox creation. (Admin sign-in goes through tessera, which runs its own human-verification gates.)
 
 5. Optional but recommended: enable **D1 read replication** in the Cloudflare dashboard for lower global read latency. flamemail already propagates D1 bookmarks on HTTP requests, so read replication can be enabled without app code changes.
 
@@ -117,8 +122,8 @@ This applies remote D1 migrations and then runs `wrangler deploy`.
 ## 🔒 Security at a Glance
 
 - **Inbox access** — each temporary inbox gets a unique token stored in KV; expires with the inbox
-- **Admin access** — password-authenticated sessions with 1-hour TTL
-- **Human verification** — `POST /api/public/inboxes` and `POST /api/public/admin/login` require a valid Turnstile token before the Worker creates state or evaluates admin credentials
+- **Admin access** — tessera OIDC sign-in checked against an operator allowlist; sessions stored in KV and served via an `HttpOnly`, `Secure`, `SameSite=Lax`, `__Host-`-prefixed cookie with 1-hour TTL
+- **Human verification** — `POST /api/public/inboxes` requires a valid Turnstile token before the Worker creates state
 - **WebSocket upgrades** — require origin validation + a one-time ticket consumed on connect
 - **Replica consistency** — inbox/admin HTTP requests propagate D1 bookmarks so replica reads stay sequentially consistent across requests
 - **Email rendering** — HTML is sanitized and served inside a sandboxed iframe with strict CSP

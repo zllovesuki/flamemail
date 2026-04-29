@@ -44,12 +44,21 @@ function parseRecipientAddress(address: string) {
   };
 }
 
-function toArrayBuffer(value: string | ArrayBuffer) {
+function toArrayBuffer(value: string | ArrayBuffer | Uint8Array): ArrayBuffer {
   if (value instanceof ArrayBuffer) {
     return value;
   }
 
-  return new TextEncoder().encode(value).buffer;
+  if (value instanceof Uint8Array) {
+    const buffer = new ArrayBuffer(value.byteLength);
+    new Uint8Array(buffer).set(value);
+    return buffer;
+  }
+
+  const encoded = new TextEncoder().encode(value);
+  const buffer = new ArrayBuffer(encoded.byteLength);
+  new Uint8Array(buffer).set(encoded);
+  return buffer;
 }
 
 export async function handleIncomingEmail(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext) {

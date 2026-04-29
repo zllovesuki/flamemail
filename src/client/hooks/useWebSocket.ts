@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createWebSocketTicket } from "@/client/lib/api";
+import { createWebSocketTicket, type AuthDescriptor } from "@/client/lib/api";
 
 type SocketState = "idle" | "connecting" | "open" | "closed" | "error";
 
@@ -9,7 +9,7 @@ interface Decoder<T> {
 
 interface UseWebSocketOptions<TMessage> {
   address: string;
-  token: string;
+  auth: AuthDescriptor | null;
   enabled: boolean;
   messageCodec: Decoder<TMessage>;
   onMessage?: (message: TMessage) => void;
@@ -17,23 +17,30 @@ interface UseWebSocketOptions<TMessage> {
 
 export function useWebSocket<TMessage>({
   address,
-  token,
+  auth,
   enabled,
   messageCodec,
   onMessage,
 }: UseWebSocketOptions<TMessage>) {
   const callbackRef = useRef(onMessage);
-  const [status, setStatus] = useState<SocketState>(enabled ? "connecting" : "idle");
+  const [status, setStatus] = useState<SocketState>(enabled && auth ? "connecting" : "idle");
+
+  // Reduce auth to a stable key so callers passing freshly-allocated
+  // descriptor objects on each render do not retrigger the connect
+  // effect. The descriptor itself is reconstructed inside the effect.
+  const authMode = auth?.mode ?? "none";
+  const userToken = auth?.mode === "user" ? auth.token : "";
 
   useEffect(() => {
     callbackRef.current = onMessage;
   }, [onMessage]);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || authMode === "none") {
       setStatus("idle");
       return;
     }
+    const effectiveAuth: AuthDescriptor = authMode === "user" ? { mode: "user", token: userToken } : { mode: "admin" };
 
     let closedByHook = false;
     let reconnectDelay = 1_000;
@@ -57,7 +64,7 @@ export function useWebSocket<TMessage>({
       setStatus("connecting");
 
       try {
-        const { ticket } = await createWebSocketTicket(address, token);
+        const { ticket } = await createWebSocketTicket(address, effectiveAuth);
         if (closedByHook) {
           return;
         }
@@ -127,7 +134,7 @@ export function useWebSocket<TMessage>({
 
       socket?.close();
     };
-  }, [address, enabled, messageCodec, token]);
+  }, [address, authMode, userToken, enabled, messageCodec]);
 
   return status;
 }

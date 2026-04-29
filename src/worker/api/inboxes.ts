@@ -10,7 +10,7 @@ import {
 } from "@/shared/contracts";
 import { createLogger, errorContext } from "@/worker/logger";
 import { getPublicErrorMessage } from "@/worker/security";
-import { requireInboxAccess } from "@/worker/middleware/auth";
+import { requireInboxRouteAccess } from "@/worker/middleware/auth";
 import { toInboxInfo } from "@/worker/serializers/inbox";
 import {
   createTemporaryInbox,
@@ -83,18 +83,26 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
     }
   });
 
-  app.get("/api/protected/inboxes/:address", requireInboxAccess, async (c) => {
+  app.get("/api/protected/inboxes/:address", requireInboxRouteAccess, async (c) => {
     const inbox = c.get("inbox");
     return c.json(toInboxInfo(inbox));
   });
 
-  app.post("/api/protected/inboxes/:address/extend", requireInboxAccess, async (c) => {
+  app.post("/api/protected/inboxes/:address/extend", requireInboxRouteAccess, async (c) => {
     const inbox = c.get("inbox");
     const session = c.get("session");
-    const token = c.get("token");
 
     if (session.type === "admin") {
       return c.json(ErrorResponse.create({ error: "Admin inspection for temporary inboxes is read-only" }), 403);
+    }
+
+    // requireInboxRouteAccess routes user-class requests through
+    // requireInboxAccess, which sets c.var.token to the bearer string.
+    // The admin guard above narrows session.type to "user", so token is
+    // always present here.
+    const token = c.get("token");
+    if (!token) {
+      return c.json(ErrorResponse.create({ error: "Unauthorized" }), 401);
     }
 
     let body;
@@ -124,7 +132,7 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
     }
   });
 
-  app.post("/api/protected/inboxes/:address/ws-ticket", requireInboxAccess, async (c) => {
+  app.post("/api/protected/inboxes/:address/ws-ticket", requireInboxRouteAccess, async (c) => {
     const inbox = c.get("inbox");
     const session = c.get("session");
     const ticket = await createWebSocketTicket(c.env, inbox.fullAddress, session);
@@ -132,7 +140,7 @@ export function registerInboxRoutes(app: Hono<AppBindings>) {
     return c.json(WebSocketTicketResponse.create({ ticket }));
   });
 
-  app.delete("/api/protected/inboxes/:address", requireInboxAccess, async (c) => {
+  app.delete("/api/protected/inboxes/:address", requireInboxRouteAccess, async (c) => {
     const inbox = c.get("inbox");
 
     try {

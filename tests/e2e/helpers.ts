@@ -1,29 +1,12 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { expect, type Page } from "playwright/test";
 
 const execFileAsync = promisify(execFile);
-const baseURL = "http://127.0.0.1:4173";
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173";
 const projectRoot = fileURLToPath(new URL("../..", import.meta.url));
-
-function resolveAdminPassword() {
-  const envFilePath = fileURLToPath(new URL("../../.dev.vars", import.meta.url));
-
-  if (existsSync(envFilePath)) {
-    const envFile = readFileSync(envFilePath, "utf8");
-    const match = envFile.match(/^ADMIN_PASSWORD=(.*)$/m);
-    if (match?.[1]) {
-      return match[1].trim();
-    }
-  }
-
-  return process.env.E2E_ADMIN_PASSWORD ?? process.env.ADMIN_PASSWORD ?? "AdminPassword123!#";
-}
-
-const adminPassword = resolveAdminPassword();
 
 export function makeDomainName(prefix: string) {
   return `${prefix}-${randomUUID().slice(0, 8)}.test`;
@@ -72,16 +55,18 @@ export async function stubTurnstile(page: Page, token = "e2e-turnstile-token") {
 
 export async function signInAdmin(page: Page) {
   await page.goto("/admin");
-  await page.getByLabel("Admin password").fill(adminPassword);
-  const signInButton = page.getByRole("button", { name: "Sign in" });
-  await expect(signInButton).toBeEnabled({ timeout: 15_000 });
-  await signInButton.click();
-  await expect(page.getByText("Authenticated")).toBeVisible();
+  const signInLink = page.getByRole("link", { name: /sign in with tessera/i });
+  await expect(signInLink).toBeVisible({ timeout: 15_000 });
+  await signInLink.click();
+  await expect(page.getByText("Authenticated via tessera")).toBeVisible({ timeout: 15_000 });
 }
 
 export function getDomainCard(page: Page, domain: string) {
+  // Scope to the per-domain row (`.rounded-lg`) rather than the outer
+  // domain manager card (`.rounded-xl`); otherwise multiple domains
+  // collapse onto the same locator and strict-mode rejects the click.
   return page
-    .locator("div.rounded-xl")
+    .locator("div.rounded-lg")
     .filter({
       has: page.locator("strong", { hasText: domain }),
     })

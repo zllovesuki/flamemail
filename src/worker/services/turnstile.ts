@@ -1,4 +1,5 @@
 import { eg, type TypeFromCodec } from "@cloudflare/util-en-garde";
+import { isLoopbackHostname } from "@/worker/security";
 
 export const TURNSTILE_REQUIRED_MESSAGE = "Human verification failed. Please try again.";
 export const TURNSTILE_UNAVAILABLE_MESSAGE = "Human verification is temporarily unavailable.";
@@ -40,10 +41,6 @@ interface VerifyTurnstileTokenOptions {
   remoteIp?: string | null;
   requestUrl: string;
   token: string;
-}
-
-function isLoopbackHostname(hostname: string) {
-  return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1" || hostname === "[::1]";
 }
 
 export async function verifyTurnstileToken(

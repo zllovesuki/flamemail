@@ -1,9 +1,16 @@
 import { env } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDb } from "@/worker/db";
-import { emails } from "@/worker/db/schema";
 import { getRawStorageKey } from "@/worker/services/storage";
-import { apiRequest, resetWorkerState, seedDomain, seedEmail, seedInbox, seedSession } from "./helpers";
+import {
+  apiRequest,
+  resetWorkerState,
+  seedAdminCookieSession,
+  seedDomain,
+  seedEmail,
+  seedInbox,
+  seedSession,
+} from "./helpers";
 
 describe("worker api /api/protected/inboxes/:address/emails", () => {
   beforeEach(async () => {
@@ -130,14 +137,12 @@ describe("worker api /api/protected/inboxes/:address/emails", () => {
     expect(updatedEmail?.isRead).toBe(true);
   });
 
-  it("does not mark an email as read when an admin fetches the detail view", async () => {
+  it("does not mark an email as read when an admin inspects the detail view", async () => {
     await seedDomain("mail.test");
     const inbox = await seedInbox({
       address: "reader@mail.test",
     });
-    const token = await seedSession({
-      type: "admin",
-    });
+    const { cookie } = await seedAdminCookieSession();
     const seededEmail = await seedEmail({
       address: inbox.fullAddress,
       inboxId: inbox.id,
@@ -146,9 +151,9 @@ describe("worker api /api/protected/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}?admin=1`,
       {
-        token,
+        cookie,
       },
     );
 
@@ -220,14 +225,12 @@ describe("worker api /api/protected/inboxes/:address/emails", () => {
     });
   });
 
-  it("returns raw email content for admin sessions", async () => {
+  it("returns raw email content for admin-inspect sessions", async () => {
     await seedDomain("mail.test");
     const inbox = await seedInbox({
       address: "reader@mail.test",
     });
-    const token = await seedSession({
-      type: "admin",
-    });
+    const { cookie } = await seedAdminCookieSession();
     const seededEmail = await seedEmail({
       address: inbox.fullAddress,
       inboxId: inbox.id,
@@ -235,9 +238,9 @@ describe("worker api /api/protected/inboxes/:address/emails", () => {
     });
 
     const response = await apiRequest(
-      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/raw`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}/raw?admin=1`,
       {
-        token,
+        cookie,
       },
     );
 
@@ -252,19 +255,17 @@ describe("worker api /api/protected/inboxes/:address/emails", () => {
     const inbox = await seedInbox({
       address: "reader@mail.test",
     });
-    const token = await seedSession({
-      type: "admin",
-    });
+    const { cookie } = await seedAdminCookieSession();
     const seededEmail = await seedEmail({
       address: inbox.fullAddress,
       inboxId: inbox.id,
     });
 
     const response = await apiRequest(
-      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}`,
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}?admin=1`,
       {
         method: "DELETE",
-        token,
+        cookie,
       },
     );
 
@@ -272,6 +273,59 @@ describe("worker api /api/protected/inboxes/:address/emails", () => {
     await expect(response.json()).resolves.toEqual({
       error: "Admin inspection for temporary inboxes is read-only",
     });
+  });
+
+  it("allows admin-inspect to delete an email on a permanent inbox", async () => {
+    await seedDomain("mail.test");
+    const inbox = await seedInbox({
+      address: "admin@mail.test",
+      isPermanent: true,
+    });
+    const { cookie } = await seedAdminCookieSession();
+    const seededEmail = await seedEmail({
+      address: inbox.fullAddress,
+      inboxId: inbox.id,
+    });
+
+    const response = await apiRequest(
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}?admin=1`,
+      {
+        method: "DELETE",
+        cookie,
+      },
+    );
+
+    expect(response.status).toBe(200);
+
+    const db = createDb(env.DB.withSession("first-primary"));
+    const stored = await db.query.emails.findFirst({
+      where: (table, { eq }) => eq(table.id, seededEmail.emailId),
+    });
+    expect(stored).toBeUndefined();
+  });
+
+  it("rejects cross-origin admin-inspect email deletion", async () => {
+    await seedDomain("mail.test");
+    const inbox = await seedInbox({
+      address: "admin@mail.test",
+      isPermanent: true,
+    });
+    const { cookie } = await seedAdminCookieSession();
+    const seededEmail = await seedEmail({
+      address: inbox.fullAddress,
+      inboxId: inbox.id,
+    });
+
+    const response = await apiRequest(
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/emails/${seededEmail.emailId}?admin=1`,
+      {
+        method: "DELETE",
+        cookie,
+        origin: "https://attacker.example",
+      },
+    );
+
+    expect(response.status).toBe(403);
   });
 
   it("deletes an email and its stored objects for the owning user", async () => {

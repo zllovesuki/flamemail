@@ -1,7 +1,6 @@
-import { ADMIN_ACCESS_DISABLED_ERROR_CODE, ErrorResponse } from "@/shared/contracts";
+import { ErrorResponse } from "@/shared/contracts";
 import { D1_BOOKMARK_HEADER } from "@/shared/d1";
 import { applyResponseBookmark, getStoredBookmark } from "./bookmarks";
-import { clearAdminToken, getAdminToken } from "./session-storage";
 import { type ApiRequestOptions, type Decoder } from "./shared";
 
 export class ApiError extends Error {
@@ -60,20 +59,8 @@ export async function fetchWithSession(path: string, options?: ApiRequestOptions
   return response;
 }
 
-function shouldClearAdminToken(token: string | undefined, status: number, code?: string) {
-  return (
-    code === ADMIN_ACCESS_DISABLED_ERROR_CODE ||
-    ((status === 401 || status === 403) && typeof token === "string" && token.length > 0 && getAdminToken() === token)
-  );
-}
-
-export async function throwApiError(response: Response, token?: string): Promise<never> {
+export async function throwApiError(response: Response): Promise<never> {
   const { code, message } = await parseError(response);
-
-  if (shouldClearAdminToken(token, response.status, code)) {
-    clearAdminToken();
-  }
-
   throw new ApiError(message, response.status, code);
 }
 
@@ -91,7 +78,7 @@ export async function request<T>(path: string, decoder: Decoder<T>, options?: Ap
   });
 
   if (!response.ok) {
-    await throwApiError(response, options?.token);
+    await throwApiError(response);
   }
 
   return decoder.assertDecode(await response.json());

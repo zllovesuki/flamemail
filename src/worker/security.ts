@@ -1,9 +1,5 @@
 import { SessionRecord, WebSocketTicketRecord } from "@/shared/contracts";
 
-interface CloudflareSubtleCrypto extends SubtleCrypto {
-  timingSafeEqual(a: ArrayBuffer | ArrayBufferView, b: ArrayBuffer | ArrayBufferView): boolean;
-}
-
 const APP_CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self' https://challenges.cloudflare.com",
@@ -17,11 +13,9 @@ const APP_CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
   "form-action 'self'",
 ].join("; ");
-const MIN_ADMIN_PASSWORD_LENGTH = 16;
-const DISALLOWED_ADMIN_PASSWORDS = new Set(["change-me", "replace-with-a-unique-strong-password"]);
 
 export const ADMIN_ACCESS_UNAVAILABLE_MESSAGE =
-  "Admin access is unavailable because ADMIN_PASSWORD is not configured securely.";
+  "Admin access is unavailable because tessera OIDC is not configured or cannot be discovered.";
 
 export class PublicError extends Error {
   constructor(message: string) {
@@ -30,36 +24,10 @@ export class PublicError extends Error {
   }
 }
 
-export function getAdminPasswordConfigurationIssue(password: string | null | undefined) {
-  if (typeof password !== "string") {
-    return "missing";
-  }
+const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
-  const normalizedPassword = password.trim();
-  if (!normalizedPassword) {
-    return "blank";
-  }
-
-  if (DISALLOWED_ADMIN_PASSWORDS.has(normalizedPassword.toLowerCase())) {
-    return "placeholder";
-  }
-
-  if (normalizedPassword.length < MIN_ADMIN_PASSWORD_LENGTH) {
-    return "too_short";
-  }
-
-  const characterClassCount = [
-    /[a-z]/.test(normalizedPassword),
-    /[A-Z]/.test(normalizedPassword),
-    /\d/.test(normalizedPassword),
-    /[^A-Za-z0-9\s]/.test(normalizedPassword),
-  ].filter(Boolean).length;
-
-  if (characterClassCount < 3) {
-    return "insufficient_complexity";
-  }
-
-  return null;
+export function isLoopbackHostname(hostname: string) {
+  return LOOPBACK_HOSTNAMES.has(hostname.toLowerCase());
 }
 
 export function getPublicErrorMessage(error: unknown, fallback: string) {
@@ -68,18 +36,6 @@ export function getPublicErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback;
-}
-
-export function constantTimeEqualStrings(left: string, right: string) {
-  const encoder = new TextEncoder();
-  const subtleCrypto = crypto.subtle as CloudflareSubtleCrypto;
-  const leftBytes = encoder.encode(left);
-  const rightBytes = encoder.encode(right);
-  const lengthsMatch = leftBytes.byteLength === rightBytes.byteLength;
-
-  return lengthsMatch
-    ? subtleCrypto.timingSafeEqual(leftBytes, rightBytes)
-    : !subtleCrypto.timingSafeEqual(leftBytes, leftBytes);
 }
 
 export function issueNoStoreHeaders(headers: Headers) {

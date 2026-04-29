@@ -1,40 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  constantTimeEqualStrings,
   decodeSessionRecord,
   decodeWebSocketTicket,
-  getAdminPasswordConfigurationIssue,
   isAllowedWebSocketOrigin,
+  isLoopbackHostname,
   withSecurityHeaders,
 } from "@/worker/security";
-
-describe("getAdminPasswordConfigurationIssue", () => {
-  it("rejects missing, blank, placeholder, short, and weak passwords", () => {
-    expect(getAdminPasswordConfigurationIssue(undefined)).toBe("missing");
-    expect(getAdminPasswordConfigurationIssue("   ")).toBe("blank");
-    expect(getAdminPasswordConfigurationIssue("change-me")).toBe("placeholder");
-    expect(getAdminPasswordConfigurationIssue("Short1!")).toBe("too_short");
-    expect(getAdminPasswordConfigurationIssue("alllowercasepassword")).toBe("insufficient_complexity");
-  });
-
-  it("accepts a sufficiently strong password", () => {
-    expect(getAdminPasswordConfigurationIssue("AdminPassword123!")).toBeNull();
-  });
-});
-
-describe("constantTimeEqualStrings", () => {
-  it("returns true for matching values", () => {
-    expect(constantTimeEqualStrings("match", "match")).toBe(true);
-  });
-
-  it("returns false for non-matching values with the same length", () => {
-    expect(constantTimeEqualStrings("match", "patch")).toBe(false);
-  });
-
-  it("returns false for non-matching values with different lengths", () => {
-    expect(constantTimeEqualStrings("match", "mismatch")).toBe(false);
-  });
-});
 
 describe("withSecurityHeaders", () => {
   it("sets CSP, no-store, and HSTS headers for HTML over HTTPS", () => {
@@ -111,6 +82,20 @@ describe("isAllowedWebSocketOrigin", () => {
   });
 });
 
+describe("isLoopbackHostname", () => {
+  it("accepts local hostnames used by URL.hostname", () => {
+    expect(isLoopbackHostname("localhost")).toBe(true);
+    expect(isLoopbackHostname("127.0.0.1")).toBe(true);
+    expect(isLoopbackHostname("[::1]")).toBe(true);
+    expect(isLoopbackHostname("::1")).toBe(true);
+  });
+
+  it("rejects non-loopback hostnames", () => {
+    expect(isLoopbackHostname("auth.example")).toBe(false);
+    expect(isLoopbackHostname("192.0.2.10")).toBe(false);
+  });
+});
+
 describe("decodeWebSocketTicket", () => {
   it("decodes valid ticket payloads", () => {
     const raw = JSON.stringify({
@@ -151,15 +136,24 @@ describe("decodeSessionRecord", () => {
       decodeSessionRecord(
         JSON.stringify({
           type: "admin",
+          sub: "00000000-0000-4000-8000-000000000001",
         }),
       ),
     ).toEqual({
       type: "admin",
+      sub: "00000000-0000-4000-8000-000000000001",
     });
   });
 
   it("returns null for invalid json and invalid shapes", () => {
     expect(decodeSessionRecord("{")).toBeNull();
+    expect(
+      decodeSessionRecord(
+        JSON.stringify({
+          type: "admin",
+        }),
+      ),
+    ).toBeNull();
     expect(
       decodeSessionRecord(
         JSON.stringify({

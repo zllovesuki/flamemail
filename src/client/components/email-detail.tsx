@@ -7,6 +7,7 @@ import {
   downloadAttachment,
   getRawEmailSource,
   getErrorMessage,
+  type AuthDescriptor,
   type EmailAttachment,
   type EmailDetail as EmailDetailType,
 } from "@/client/lib/api";
@@ -14,7 +15,7 @@ import { fullDate } from "@/client/lib/time";
 
 interface EmailDetailProps {
   address: string;
-  token: string;
+  auth: AuthDescriptor;
   email: EmailDetailType | null;
   loading: boolean;
   canDelete: boolean;
@@ -73,7 +74,7 @@ function buildSrcDoc(html: string, bodyAttributes = "", headHtml = "") {
 </html>`;
 }
 
-export function EmailDetail({ address, token, email, loading, canDelete, canViewRaw, onDelete }: EmailDetailProps) {
+export function EmailDetail({ address, auth, email, loading, canDelete, canViewRaw, onDelete }: EmailDetailProps) {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadingRaw, setDownloadingRaw] = useState(false);
   const [allowRemoteContent, setAllowRemoteContent] = useState(false);
@@ -95,7 +96,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
     setDownloadingId(attachment.id);
 
     try {
-      const blob = await downloadAttachment(address, email.id, attachment.id, token);
+      const blob = await downloadAttachment(address, email.id, attachment.id, auth);
       const fileName = attachment.filename ?? "attachment.bin";
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -127,7 +128,7 @@ export function EmailDetail({ address, token, email, loading, canDelete, canView
     setDownloadingRaw(true);
 
     try {
-      const rawSource = await getRawEmailSource(address, email.id, token);
+      const rawSource = await getRawEmailSource(address, email.id, auth);
       const pre = rawWindow.document.createElement("pre");
       pre.style.cssText = "margin:0;white-space:pre-wrap;word-break:break-word;";
       pre.textContent = rawSource;

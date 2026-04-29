@@ -17,7 +17,8 @@ interface InboxViewProps {
 }
 
 export function InboxView({ onDeleted }: InboxViewProps) {
-  const { address, adminMode, session } = useInboxRouteSession();
+  const { address, adminMode, auth } = useInboxRouteSession();
+  const session = auth ? { address, auth } : null;
   const {
     inbox,
     emails,
@@ -55,7 +56,7 @@ export function InboxView({ onDeleted }: InboxViewProps) {
 
   const socketState = useWebSocket<NewEmailEvent>({
     address,
-    token: session?.token ?? "",
+    auth,
     enabled: Boolean(session),
     messageCodec: NewEmailEvent,
     onMessage: useCallback(
@@ -117,7 +118,7 @@ export function InboxView({ onDeleted }: InboxViewProps) {
           ) : null}
           <EmailDetail
             address={address}
-            token={session.token}
+            auth={session.auth}
             email={selectedEmail}
             loading={emailLoading}
             canDelete={canDeleteEmail}

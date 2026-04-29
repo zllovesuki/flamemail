@@ -1,10 +1,13 @@
 import { defineConfig, devices } from "playwright/test";
 
-const baseURL = "http://127.0.0.1:4173";
-const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? "AdminPassword123!#";
+// globalSetup picks free ports and exports PLAYWRIGHT_BASE_URL plus the
+// fake OIDC issuer so each run is hermetic and never collides with a
+// local dev server (e.g. tessera on 5174).
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173";
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,
   workers: 1,
   timeout: 60_000,
@@ -20,15 +23,4 @@ export default defineConfig({
       use: devices["Desktop Chrome"],
     },
   ],
-  webServer: {
-    command: "npx vite --host 127.0.0.1 --port 4173",
-    url: baseURL,
-    timeout: 120_000,
-    reuseExistingServer: !process.env.CI,
-    env: {
-      ADMIN_PASSWORD: adminPassword,
-      TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
-      TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
-    },
-  },
 });

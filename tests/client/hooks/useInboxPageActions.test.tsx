@@ -32,7 +32,7 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-vi.mock("@/client/components/Toast", () => ({
+vi.mock("@/client/components/toast", () => ({
   toast: {
     success: toastSuccessMock,
     error: toastErrorMock,
@@ -97,7 +97,7 @@ describe("useInboxPageActions", () => {
           selectEmail: vi.fn(),
           session: {
             address: "reader@mail.test",
-            token: "tok_user",
+            auth: { mode: "user" as const, token: "tok_user" },
           },
         }),
       {
@@ -126,7 +126,7 @@ describe("useInboxPageActions", () => {
           selectEmail: vi.fn(),
           session: {
             address: "reader@mail.test",
-            token: "tok_user",
+            auth: { mode: "user" as const, token: "tok_user" },
           },
         }),
       {
@@ -155,7 +155,7 @@ describe("useInboxPageActions", () => {
           selectEmail: vi.fn(),
           session: {
             address: "reader@mail.test",
-            token: "tok_user",
+            auth: { mode: "user" as const, token: "tok_user" },
           },
         }),
       {
@@ -185,7 +185,7 @@ describe("useInboxPageActions", () => {
           selectEmail: vi.fn(),
           session: {
             address: "reader@mail.test",
-            token: "tok_user",
+            auth: { mode: "user" as const, token: "tok_user" },
           },
         }),
       {
@@ -197,7 +197,7 @@ describe("useInboxPageActions", () => {
       await result.current.handleDeleteInbox();
     });
 
-    expect(deleteInboxMock).toHaveBeenCalledWith("reader@mail.test", "tok_user");
+    expect(deleteInboxMock).toHaveBeenCalledWith("reader@mail.test", { mode: "user", token: "tok_user" });
     expect(removeInboxSessionMock).toHaveBeenCalledWith("reader@mail.test");
     expect(onDeleted).toHaveBeenCalledWith("reader@mail.test");
     expect(toastSuccessMock).toHaveBeenCalledWith("Inbox deleted");
@@ -217,7 +217,7 @@ describe("useInboxPageActions", () => {
           selectEmail: vi.fn(),
           session: {
             address: "reader@mail.test",
-            token: "tok_user",
+            auth: { mode: "user" as const, token: "tok_user" },
           },
         }),
       {
@@ -250,7 +250,7 @@ describe("useInboxPageActions", () => {
           selectEmail: vi.fn(),
           session: {
             address: "reader@mail.test",
-            token: "tok_user",
+            auth: { mode: "user" as const, token: "tok_user" },
           },
         }),
       {
@@ -262,7 +262,7 @@ describe("useInboxPageActions", () => {
       await result.current.handleExtendInbox(72);
     });
 
-    expect(extendInboxMock).toHaveBeenCalledWith("reader@mail.test", "tok_user", 72);
+    expect(extendInboxMock).toHaveBeenCalledWith("reader@mail.test", { mode: "user", token: "tok_user" }, 72);
     expect(updateInboxSessionMock).toHaveBeenCalledWith("reader@mail.test", {
       expiresAt: "2026-04-18T00:00:00.000Z",
       ttlHours: 72,
@@ -287,7 +287,7 @@ describe("useInboxPageActions", () => {
           selectEmail: vi.fn(),
           session: {
             address: "reader@mail.test",
-            token: "tok_user",
+            auth: { mode: "user" as const, token: "tok_user" },
           },
         }),
       {
@@ -338,7 +338,7 @@ describe("useInboxPageActions", () => {
           selectEmail: vi.fn(),
           session: {
             address: "admin@mail.test",
-            token: "tok_admin",
+            auth: { mode: "admin" as const },
           },
         }),
       {

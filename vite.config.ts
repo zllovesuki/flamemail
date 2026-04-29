@@ -25,8 +25,21 @@ const shouldIgnoreWatchPath = (watchedPath: string) => {
   return relativePath !== "src" && !relativePath.startsWith("src/");
 };
 
+// E2E suite seeds an isolated D1/KV/R2 state directory per run; the
+// FLAMEMAIL_E2E_PERSIST_PATH env points the cloudflare-vite plugin at
+// that directory so vite/miniflare share the same state that
+// `wrangler ... migrations apply --persist-to` wrote. Local dev leaves
+// the env unset and uses the default `.wrangler/state` path.
+const e2ePersistStatePath = process.env.FLAMEMAIL_E2E_PERSIST_PATH;
+
 export default defineConfig({
-  plugins: [tailwindcss(), react(), cloudflare()],
+  plugins: [
+    tailwindcss(),
+    react(),
+    cloudflare({
+      ...(e2ePersistStatePath ? { persistState: { path: e2ePersistStatePath } } : {}),
+    }),
+  ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

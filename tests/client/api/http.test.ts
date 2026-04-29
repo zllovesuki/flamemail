@@ -2,8 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ADMIN_ACCESS_DISABLED_ERROR_CODE } from "@/shared/contracts";
 import { D1_BOOKMARK_HEADER } from "@/shared/d1";
 import { getStoredBookmark, setStoredBookmark } from "@/client/lib/api/bookmarks";
-import { fetchWithSession, parseError, request, throwApiError } from "@/client/lib/api/http";
-import { clearAdminToken, getAdminToken, setAdminToken } from "@/client/lib/api/session-storage";
+import { fetchWithSession, parseError, request } from "@/client/lib/api/http";
 import { fetchMock } from "../../setup/client";
 
 describe("client api http helpers", () => {
@@ -82,63 +81,6 @@ describe("client api http helpers", () => {
     await expect(parseError(response)).resolves.toEqual({
       message: "500 Server exploded",
     });
-  });
-
-  it("clears the admin token only for intended status and code combinations", async () => {
-    setAdminToken("tok_admin");
-
-    await expect(
-      throwApiError(
-        new Response(JSON.stringify({ error: "Disabled", code: ADMIN_ACCESS_DISABLED_ERROR_CODE }), {
-          status: 503,
-          headers: {
-            "content-type": "application/json",
-          },
-        }),
-        "tok_admin",
-      ),
-    ).rejects.toMatchObject({
-      message: "Disabled",
-      code: ADMIN_ACCESS_DISABLED_ERROR_CODE,
-      status: 503,
-    });
-    expect(getAdminToken()).toBeNull();
-
-    setAdminToken("tok_admin");
-    await expect(
-      throwApiError(
-        new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403,
-          headers: {
-            "content-type": "application/json",
-          },
-        }),
-        "tok_admin",
-      ),
-    ).rejects.toMatchObject({
-      message: "Forbidden",
-      status: 403,
-    });
-    expect(getAdminToken()).toBeNull();
-
-    setAdminToken("tok_admin");
-    await expect(
-      throwApiError(
-        new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403,
-          headers: {
-            "content-type": "application/json",
-          },
-        }),
-        "tok_other",
-      ),
-    ).rejects.toMatchObject({
-      message: "Forbidden",
-      status: 403,
-    });
-    expect(getAdminToken()).toBe("tok_admin");
-
-    clearAdminToken();
   });
 
   it("requests json payloads and decodes successful responses", async () => {

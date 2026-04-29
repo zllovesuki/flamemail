@@ -51,7 +51,7 @@ describe("useWebSocket", () => {
     const { result } = renderHook(() =>
       useWebSocket({
         address: "reader@mail.test",
-        token: "tok_user",
+        auth: { mode: "user" as const, token: "tok_user" },
         enabled: false,
         messageCodec: decoder<{ ok: true }>(),
       }),
@@ -69,7 +69,7 @@ describe("useWebSocket", () => {
     renderHook(() =>
       useWebSocket({
         address: "reader@mail.test",
-        token: "tok_user",
+        auth: { mode: "user" as const, token: "tok_user" },
         enabled: true,
         messageCodec: decoder<{ ok: true }>(),
       }),
@@ -77,7 +77,7 @@ describe("useWebSocket", () => {
 
     await flushAsyncWork();
 
-    expect(createWebSocketTicketMock).toHaveBeenCalledWith("reader@mail.test", "tok_user");
+    expect(createWebSocketTicketMock).toHaveBeenCalledWith("reader@mail.test", { mode: "user", token: "tok_user" });
     expect(TrackingWebSocket.instances).toHaveLength(1);
     expect(TrackingWebSocket.instances[0]?.url).toContain("/ws?address=reader%40mail.test&ticket=wst_123");
   });
@@ -91,7 +91,7 @@ describe("useWebSocket", () => {
     const { result } = renderHook(() =>
       useWebSocket({
         address: "reader@mail.test",
-        token: "tok_user",
+        auth: { mode: "user" as const, token: "tok_user" },
         enabled: true,
         messageCodec,
         onMessage,
@@ -134,7 +134,7 @@ describe("useWebSocket", () => {
     renderHook(() =>
       useWebSocket({
         address: "reader@mail.test",
-        token: "tok_user",
+        auth: { mode: "user" as const, token: "tok_user" },
         enabled: true,
         messageCodec,
         onMessage,
@@ -160,7 +160,7 @@ describe("useWebSocket", () => {
     renderHook(() =>
       useWebSocket({
         address: "reader@mail.test",
-        token: "tok_user",
+        auth: { mode: "user" as const, token: "tok_user" },
         enabled: true,
         messageCodec: decoder<{ ok: true }>(),
       }),

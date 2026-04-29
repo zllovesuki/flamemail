@@ -1,7 +1,6 @@
 import { env } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDb } from "@/worker/db";
-import { domains, inboxes } from "@/worker/db/schema";
 import {
   addDomain,
   createTemporaryInbox,
@@ -96,7 +95,14 @@ describe("worker inbox lifecycle services", () => {
     });
 
     await expect(
-      extendTemporaryInbox(env, permanentInbox, "tok_admin", { type: "admin" }, 72, getDb()),
+      extendTemporaryInbox(
+        env,
+        permanentInbox,
+        "tok_admin",
+        { type: "admin", sub: "00000000-0000-4000-8000-000000000001" },
+        72,
+        getDb(),
+      ),
     ).rejects.toThrow("Permanent inboxes cannot be extended");
 
     await expect(

@@ -1,10 +1,24 @@
 import { EmailDetail, EmailPage, OkResponse } from "@/shared/contracts";
 import { getInboxBookmarkScope } from "./bookmarks";
 import { fetchWithSession, parseError, request, ApiError } from "./http";
+import type { AuthDescriptor } from "./shared";
+
+function buildEmailsPath(address: string, suffix: string, query: URLSearchParams, auth: AuthDescriptor) {
+  if (auth.mode === "admin") {
+    query.set("admin", "1");
+  }
+  const queryString = query.toString();
+  const base = `/api/protected/inboxes/${encodeURIComponent(address)}${suffix}`;
+  return queryString ? `${base}?${queryString}` : base;
+}
+
+function bearerToken(auth: AuthDescriptor) {
+  return auth.mode === "user" ? auth.token : undefined;
+}
 
 export async function listEmails(
   address: string,
-  token: string,
+  auth: AuthDescriptor,
   options: {
     page?: number;
     includeTotal?: boolean;
@@ -18,43 +32,47 @@ export async function listEmails(
     params.set("includeTotal", "1");
   }
 
-  return request(`/api/protected/inboxes/${encodeURIComponent(address)}/emails?${params.toString()}`, EmailPage, {
-    token,
+  return request(buildEmailsPath(address, "/emails", params, auth), EmailPage, {
+    token: bearerToken(auth),
     bookmarkScope: getInboxBookmarkScope(address),
   });
 }
 
-export async function getEmail(address: string, emailId: string, token: string) {
+export async function getEmail(address: string, emailId: string, auth: AuthDescriptor) {
   return request(
-    `/api/protected/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`,
+    buildEmailsPath(address, `/emails/${encodeURIComponent(emailId)}`, new URLSearchParams(), auth),
     EmailDetail,
     {
-      token,
+      token: bearerToken(auth),
       bookmarkScope: getInboxBookmarkScope(address),
     },
   );
 }
 
-export async function deleteEmail(address: string, emailId: string, token: string) {
+export async function deleteEmail(address: string, emailId: string, auth: AuthDescriptor) {
   return request(
-    `/api/protected/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}`,
+    buildEmailsPath(address, `/emails/${encodeURIComponent(emailId)}`, new URLSearchParams(), auth),
     OkResponse,
     {
       method: "DELETE",
-      token,
+      token: bearerToken(auth),
       bookmarkScope: getInboxBookmarkScope(address),
     },
   );
 }
 
-export async function downloadAttachment(address: string, emailId: string, attachmentId: string, token: string) {
-  const response = await fetchWithSession(
-    `/api/protected/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}/attachments/${encodeURIComponent(attachmentId)}`,
-    {
-      token,
-      bookmarkScope: getInboxBookmarkScope(address),
-    },
+export async function downloadAttachment(address: string, emailId: string, attachmentId: string, auth: AuthDescriptor) {
+  const path = buildEmailsPath(
+    address,
+    `/emails/${encodeURIComponent(emailId)}/attachments/${encodeURIComponent(attachmentId)}`,
+    new URLSearchParams(),
+    auth,
   );
+
+  const response = await fetchWithSession(path, {
+    token: bearerToken(auth),
+    bookmarkScope: getInboxBookmarkScope(address),
+  });
 
   if (!response.ok) {
     const { code, message } = await parseError(response);
@@ -64,14 +82,13 @@ export async function downloadAttachment(address: string, emailId: string, attac
   return response.blob();
 }
 
-export async function getRawEmailSource(address: string, emailId: string, token: string) {
-  const response = await fetchWithSession(
-    `/api/protected/inboxes/${encodeURIComponent(address)}/emails/${encodeURIComponent(emailId)}/raw`,
-    {
-      token,
-      bookmarkScope: getInboxBookmarkScope(address),
-    },
-  );
+export async function getRawEmailSource(address: string, emailId: string, auth: AuthDescriptor) {
+  const path = buildEmailsPath(address, `/emails/${encodeURIComponent(emailId)}/raw`, new URLSearchParams(), auth);
+
+  const response = await fetchWithSession(path, {
+    token: bearerToken(auth),
+    bookmarkScope: getInboxBookmarkScope(address),
+  });
 
   if (!response.ok) {
     const { code, message } = await parseError(response);

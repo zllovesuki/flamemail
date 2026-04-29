@@ -45,6 +45,7 @@ describe("worker websocket admission", () => {
   it("rejects websocket upgrades when the inbox does not exist", async () => {
     const ticket = await createWebSocketTicket(env, "reader@mail.test", {
       type: "admin",
+      sub: "00000000-0000-4000-8000-000000000001",
     });
 
     const response = await worker.fetch(websocketRequest("reader@mail.test", ticket), env, createExecutionContext());
@@ -92,6 +93,7 @@ describe("worker websocket admission", () => {
     });
     const ticket = await createWebSocketTicket(env, "reader@mail.test", {
       type: "admin",
+      sub: "00000000-0000-4000-8000-000000000001",
     });
 
     const firstResponse = await worker.fetch(

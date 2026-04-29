@@ -49,6 +49,13 @@ export async function revokeInboxSessionToken(env: Env, address: string) {
   ]);
 }
 
+export async function revokeAdminSessionToken(env: Env, token: string) {
+  if (!token) {
+    return;
+  }
+  await env.SESSIONS.delete(getSessionTokenKey(token));
+}
+
 export async function createWebSocketTicket(env: Env, address: string, session: SessionRecord) {
   const ticket = `wst_${nanoid(24)}`;
 

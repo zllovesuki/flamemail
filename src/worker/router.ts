@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { ErrorResponse } from "@/shared/contracts";
 import { D1_BOOKMARK_HEADER } from "@/shared/d1";
 import { registerAdminRoutes } from "@/worker/api/admin";
+import { registerAdminOidcRoutes } from "@/worker/api/admin-oidc";
 import { registerConfigRoutes } from "@/worker/api/config";
 import { registerDomainRoutes } from "@/worker/api/domains";
 import { registerEmailRoutes } from "@/worker/api/emails";
@@ -54,6 +55,7 @@ registerDomainRoutes(app);
 registerInboxRoutes(app);
 registerEmailRoutes(app);
 registerAdminRoutes(app);
+registerAdminOidcRoutes(app);
 
 app.notFound((c) => c.json(ErrorResponse.create({ error: "Not found" }), 404));
 

@@ -10,7 +10,7 @@ const { createInboxMock, getErrorMessageMock, isTurnstileErrorMock, listDomainsM
   listDomainsMock: vi.fn(),
 }));
 
-vi.mock("@/client/components/TurnstileWidget", () => ({
+vi.mock("@/client/components/turnstile-widget", () => ({
   TurnstileWidget: ({ onTokenChange }: { onTokenChange: (token: string | null) => void }) => (
     <button type="button" onClick={() => onTokenChange("turnstile-token")}>
       Complete verification

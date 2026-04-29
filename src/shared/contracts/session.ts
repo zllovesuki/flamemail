@@ -8,6 +8,11 @@ export type UserSession = TypeFromCodec<typeof UserSession>;
 
 export const AdminSession = eg.object({
   type: eg.literal("admin"),
+  // The verified OIDC `sub` claim from tessera. Persisted in KV so
+  // requireAdmin can re-check the operator allowlist on every request,
+  // failing closed when an operator is removed from
+  // TESSERA_OPERATOR_SUBS mid-session (instead of waiting for KV TTL).
+  sub: eg.string,
 });
 export type AdminSession = TypeFromCodec<typeof AdminSession>;
 

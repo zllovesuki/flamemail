@@ -1,4 +1,4 @@
-export { Button, type ButtonVariant, type ButtonSize } from "./button";
+export { Button, buttonClasses, type ButtonVariant, type ButtonSize } from "./button";
 export { Card, type CardVariant } from "./card";
 export { Input } from "./input";
 export { Badge, type BadgeVariant } from "./badge";

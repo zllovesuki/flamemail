@@ -1,21 +1,26 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "strict": true,
-    "skipLibCheck": true,
     "noEmit": true,
+    "skipLibCheck": true,
     "allowJs": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["./worker-configuration.d.ts", "vite/client", "node"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "verbatimModuleSyntax": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["./worker-configuration.d.ts", "vite/client", "node"]
   },
   "include": ["src", "vite.config.ts", "vitest.config.ts", "drizzle.config.ts"]
 }

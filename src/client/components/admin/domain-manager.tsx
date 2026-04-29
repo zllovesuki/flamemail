@@ -7,14 +7,13 @@ import { addAdminDomain, deleteAdminDomain, updateAdminDomain, type AdminDomain 
 import { fullDate } from "@/client/lib/time";
 
 interface DomainManagerProps {
-  token: string;
   domains: AdminDomain[];
   loading: boolean;
   onAdminSessionError: (message?: string) => void;
   onReload: () => Promise<void>;
 }
 
-export function DomainManager({ token, domains, loading, onAdminSessionError, onReload }: DomainManagerProps) {
+export function DomainManager({ domains, loading, onAdminSessionError, onReload }: DomainManagerProps) {
   const [newDomain, setNewDomain] = useState("");
   const [newDomainActive, setNewDomainActive] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -25,7 +24,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
     setBusy("add");
 
     try {
-      await addAdminDomain(token, newDomain, newDomainActive);
+      await addAdminDomain(newDomain, newDomainActive);
       setNewDomain("");
       setNewDomainActive(true);
       await onReload();
@@ -41,7 +40,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
     setBusy(domain.domain);
 
     try {
-      await updateAdminDomain(token, domain.domain, !domain.isActive);
+      await updateAdminDomain(domain.domain, !domain.isActive);
       await onReload();
       toast.success(`${domain.domain} ${domain.isActive ? "disabled" : "enabled"}`);
     } catch (error) {
@@ -64,7 +63,7 @@ export function DomainManager({ token, domains, loading, onAdminSessionError, on
     setBusy(domain.domain);
 
     try {
-      await deleteAdminDomain(token, domain.domain);
+      await deleteAdminDomain(domain.domain);
       await onReload();
       toast.success(`${domain.domain} deleted`);
     } catch (error) {

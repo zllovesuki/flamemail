@@ -8,7 +8,9 @@ export type InboxRecord = typeof inboxes.$inferSelect;
 export interface AppVariables {
   db: Database;
   session: SessionRecord;
-  token: string;
+  // Set when authentication came from the Authorization bearer header
+  // (user inbox flow). Cookie-backed admin flows leave it undefined.
+  token?: string;
   inbox: InboxRecord;
 }
 

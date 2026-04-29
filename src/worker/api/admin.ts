@@ -1,103 +1,31 @@
 import { asc, count, eq, inArray } from "drizzle-orm";
 import type { Hono } from "hono";
 import {
-  ADMIN_ACCESS_DISABLED_ERROR_CODE,
   AdminDomainRequest,
   AdminDomainStatusRequest,
   AdminInboxesResponse,
-  AdminLoginRequest,
   AdminTempInboxPage,
   ErrorResponse,
   OkResponse,
-  TokenResponse,
 } from "@/shared/contracts";
 import { emails, inboxes } from "@/worker/db/schema";
 import { createLogger, errorContext } from "@/worker/logger";
 import { requireAdmin } from "@/worker/middleware/auth";
+import { requireSameOriginForCookieMutations } from "@/worker/middleware/origin";
 import { createAdminDomainsResponse } from "@/worker/serializers/admin";
+import { getPublicErrorMessage } from "@/worker/security";
 import {
-  ADMIN_ACCESS_UNAVAILABLE_MESSAGE,
-  constantTimeEqualStrings,
-  getAdminPasswordConfigurationIssue,
-  getPublicErrorMessage,
-} from "@/worker/security";
-import {
-  ADMIN_SESSION_TTL_MS,
   addDomain,
-  createSessionToken,
   deleteDomainByName,
   listActiveTemporaryInboxesForAdmin,
   listDomainsForAdmin,
   updateDomainStatus,
 } from "@/worker/services/inbox";
-import { verifyTurnstileToken } from "@/worker/services/turnstile";
 import type { AppBindings } from "@/worker/types";
 
 const logger = createLogger("admin-api");
 
 export function registerAdminRoutes(app: Hono<AppBindings>) {
-  app.post("/api/public/admin/login", async (c) => {
-    const configIssue = getAdminPasswordConfigurationIssue(c.env.ADMIN_PASSWORD);
-    if (configIssue) {
-      logger.warn("admin_login_disabled", "Blocked admin login because ADMIN_PASSWORD is not configured securely", {
-        reason: configIssue,
-      });
-      return c.json(
-        ErrorResponse.create({
-          code: ADMIN_ACCESS_DISABLED_ERROR_CODE,
-          error: ADMIN_ACCESS_UNAVAILABLE_MESSAGE,
-        }),
-        503,
-      );
-    }
-
-    let body;
-
-    try {
-      body = AdminLoginRequest.assertDecode(await c.req.json());
-    } catch {
-      return c.json(ErrorResponse.create({ error: "Invalid login request" }), 400);
-    }
-
-    const turnstileResult = await verifyTurnstileToken(c.env, {
-      token: body.turnstileToken,
-      expectedAction: "admin_login",
-      remoteIp: c.req.header("cf-connecting-ip"),
-      requestUrl: c.req.url,
-    });
-
-    if (!turnstileResult.ok) {
-      logger.warn("admin_login_turnstile_failed", "Rejected admin login attempt", {
-        reason: turnstileResult.reason,
-        errorCodes: turnstileResult.errorCodes,
-      });
-      return c.json(ErrorResponse.create({ error: turnstileResult.message }), turnstileResult.status);
-    }
-
-    const password = body.password;
-
-    const passwordMatches = constantTimeEqualStrings(password, c.env.ADMIN_PASSWORD);
-
-    if (!passwordMatches) {
-      logger.warn("admin_login_failed", "Rejected admin login attempt", {
-        reason: "invalid_password",
-      });
-      return c.json(ErrorResponse.create({ error: "Invalid admin password" }), 401);
-    }
-
-    const token = await createSessionToken(
-      c.env,
-      {
-        type: "admin",
-      },
-      ADMIN_SESSION_TTL_MS,
-    );
-
-    logger.info("admin_login_succeeded", "Created admin session token");
-
-    return c.json(TokenResponse.create({ token }));
-  });
-
   app.get("/api/protected/admin/domains", requireAdmin, async (c) => {
     const db = c.get("db");
     const items = await listDomainsForAdmin(c.env, db);
@@ -126,7 +54,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     );
   });
 
-  app.post("/api/protected/admin/domains", requireAdmin, async (c) => {
+  app.post("/api/protected/admin/domains", requireSameOriginForCookieMutations, requireAdmin, async (c) => {
     let body;
 
     try {
@@ -149,7 +77,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     }
   });
 
-  app.patch("/api/protected/admin/domains/:domain", requireAdmin, async (c) => {
+  app.patch("/api/protected/admin/domains/:domain", requireSameOriginForCookieMutations, requireAdmin, async (c) => {
     let body;
 
     try {
@@ -173,7 +101,7 @@ export function registerAdminRoutes(app: Hono<AppBindings>) {
     }
   });
 
-  app.delete("/api/protected/admin/domains/:domain", requireAdmin, async (c) => {
+  app.delete("/api/protected/admin/domains/:domain", requireSameOriginForCookieMutations, requireAdmin, async (c) => {
     const domainName = decodeURIComponent(c.req.param("domain"));
 
     try {

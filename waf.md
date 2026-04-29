@@ -6,28 +6,30 @@ The goal is not to eliminate all abuse at the edge. The goal is to reduce cheap 
 
 ## What you are protecting
 
-All unauthenticated routes live under `/api/public`. Everything under `/api/protected` requires a bearer token. This split makes WAF rules easy to target.
+All unauthenticated routes live under `/api/public`. Inbox routes under `/api/protected/inboxes/*` use a bearer token (or an admin cookie when the request includes `?admin=1`). Admin routes under `/api/protected/admin/*` use the `__Host-flamemail-admin` cookie minted at the tessera OIDC callback. This split makes WAF rules easy to target.
 
-| Surface                                             | Method                   | Auth            | Notes                                   |
-| --------------------------------------------------- | ------------------------ | --------------- | --------------------------------------- |
-| `/`, `/about`, `/admin`, `/link`, `/inbox/:address` | GET                      | None            | SPA pages and route shells              |
-| `/api/public/config`                                | GET                      | None            | Bootstrap config (Turnstile site key)   |
-| `/api/public/domains`                               | GET                      | None            | Read-only domain list                   |
-| `/api/public/inboxes`                               | POST                     | None            | Creates inbox state in D1 and KV        |
-| `/api/public/admin/login`                           | POST                     | None            | Admin password entry point              |
-| `/api/protected/inboxes/:address`                   | GET, DELETE              | Inbox token     | Inbox metadata and deletion             |
-| `/api/protected/inboxes/:address/extend`            | POST                     | Inbox token     | Extend inbox TTL                        |
-| `/api/protected/inboxes/:address/ws-ticket`         | POST                     | Inbox token     | Issue one-time WebSocket ticket         |
-| `/api/protected/inboxes/:address/emails/*`          | GET, DELETE              | Inbox token     | Email listing, detail, raw, attachments |
-| `/api/protected/admin/*`                            | GET, POST, PATCH, DELETE | Admin token     | Domain and inbox management             |
-| `/ws`                                               | GET                      | One-time ticket | WebSocket upgrade                       |
+| Surface                                             | Method                   | Auth                         | Notes                                                              |
+| --------------------------------------------------- | ------------------------ | ---------------------------- | ------------------------------------------------------------------ |
+| `/`, `/about`, `/admin`, `/link`, `/inbox/:address` | GET                      | None                         | SPA pages and route shells                                         |
+| `/api/public/config`                                | GET                      | None                         | Bootstrap config (Turnstile site key)                              |
+| `/api/public/domains`                               | GET                      | None                         | Read-only domain list                                              |
+| `/api/public/inboxes`                               | POST                     | None                         | Creates inbox state in D1 and KV                                   |
+| `/api/public/admin/start`                           | GET                      | None                         | Begins tessera OIDC handshake, sets `__Host-flamemail-oidc` cookie |
+| `/api/public/admin/callback`                        | GET                      | None                         | Completes OIDC handshake, sets `__Host-flamemail-admin` cookie     |
+| `/api/public/admin/logout`                          | POST                     | Admin cookie (best-effort)   | Clears KV admin session and the admin cookie                       |
+| `/api/protected/inboxes/:address`                   | GET, DELETE              | Inbox bearer or admin cookie | Inbox metadata and deletion (`?admin=1` selects admin-inspect)     |
+| `/api/protected/inboxes/:address/extend`            | POST                     | Inbox bearer                 | Extend inbox TTL                                                   |
+| `/api/protected/inboxes/:address/ws-ticket`         | POST                     | Inbox bearer or admin cookie | Issue one-time WebSocket ticket (`?admin=1` selects admin-inspect) |
+| `/api/protected/inboxes/:address/emails/*`          | GET, DELETE              | Inbox bearer or admin cookie | Email listing, detail, raw, attachments                            |
+| `/api/protected/admin/*`                            | GET, POST, PATCH, DELETE | Admin cookie (`__Host-`)     | Domain and permanent-inbox management                              |
+| `/ws`                                               | GET                      | One-time ticket              | WebSocket upgrade                                                  |
 
 flamemail already includes:
 
 - strict security headers on HTTP responses
 - same-origin checks on WebSocket upgrades
-- token-based authorization for inbox and admin APIs
-- Cloudflare Turnstile verification on inbox creation and admin login
+- bearer authorization for inbox APIs and tessera-OIDC cookie auth for admin APIs
+- Cloudflare Turnstile verification on anonymous inbox creation; admin sign-in is delegated to tessera
 - email HTML sanitization and isolated rendering
 
 What flamemail does **not** include yet is Worker-side throttling and lockout behavior for the public write endpoints. Turnstile adds useful friction, but Cloudflare edge controls should still be treated as a first layer rather than your only layer.
@@ -58,7 +60,7 @@ What flamemail does **not** include yet is Worker-side throttling and lockout be
 
 1. **`POST /api/public/inboxes`** — Anonymous callers can create inbox state, which drives D1 and KV usage. Turnstile helps, but this path is still worth edge rate limiting.
 
-2. **`POST /api/public/admin/login`** — Admin password entry point and the most obvious brute-force target. Turnstile should stay enabled here, but login rate limits and short lockouts are still valuable.
+2. **`GET /api/public/admin/start` and `GET /api/public/admin/callback`** — Admin OIDC handshake. tessera handles credential entry and human verification, so flamemail's surface here is mostly redirect handling. The endpoints are still worth covering by edge rate limiting under `/api/public/*`.
 
 3. **`/ws`** — Cloudflare only sees the handshake request. After the WebSocket is established, edge protections no longer inspect message traffic.
 
@@ -98,7 +100,7 @@ You only get one rate-limit rule on Free, so spend it on the anonymous write sur
 
 This is intentionally conservative. It slows down casual abuse but is **not** a replacement for application-side throttling. Cloudflare documents rate limiting as approximate, so some excess requests may still reach your Worker before mitigation starts.
 
-Because all unauthenticated write endpoints live under `/api/public`, this single rule covers both inbox creation and admin login. If your plan ever upgrades to Pro (2 rate-limit rules), you can add a tighter rule specifically for `/api/public/admin/login`.
+Because all unauthenticated write endpoints live under `/api/public`, this single rule covers inbox creation and the admin OIDC start/callback. If your plan ever upgrades to Pro (2 rate-limit rules), you can add a tighter rule specifically for `/api/public/admin/*`.
 
 ### 4. Use custom rules for low-risk edge filtering
 
@@ -129,6 +131,8 @@ http.host eq "<YOUR_HOSTNAME>" and http.request.uri.path in {"/.git" "/.env" "/w
 ```
 
 Removes common scanner noise before it reaches your Worker.
+
+Note: flamemail's `?admin=1` inbox-inspection mode and admin API mutations both require an `Origin` header matching the deploy hostname (worker-side same-origin gate). Aggressive `Origin`-stripping at the edge will break legitimate admin actions.
 
 #### Rule 4 — Reject invalid `/ws` requests
 
@@ -161,7 +165,7 @@ Why to be cautious:
 If you enable it, test these flows explicitly:
 
 - creating an inbox via `POST /api/public/inboxes`
-- admin login via `POST /api/public/admin/login`
+- admin sign-in via `GET /api/public/admin/start` and the resulting tessera redirect back to `GET /api/public/admin/callback`
 - authenticated admin API fetches under `/api/protected/admin/*`
 - the `/ws` upgrade flow
 - any uptime checks or synthetic monitoring you run
@@ -196,13 +200,13 @@ Cloudflare rate limiting on Free gives you one rule. Turnstile reduces cheap aut
 For a serious deployment, add Worker-side limits for:
 
 - `POST /api/public/inboxes` — throttle inbox creation per IP
-- `POST /api/public/admin/login` — throttle and add short lockouts after repeated failures
+- `GET /api/public/admin/start` and `GET /api/public/admin/callback` — throttle to slow down OIDC handshake replay attempts
 
 ### Browser token theft through XSS
 
-Temporary inbox tokens are stored in `localStorage`, and admin tokens are stored in `sessionStorage`.
+Temporary inbox tokens are stored in `localStorage`. The admin session lives in an `HttpOnly` cookie (`__Host-flamemail-admin`) so it is not reachable from JavaScript.
 
-flamemail has strong defenses around CSP and email HTML sanitization, but browser-stored bearer tokens remain sensitive by nature. WAF can reduce incoming attack traffic but does not remove the need for robust frontend XSS protection.
+flamemail has strong defenses around CSP and email HTML sanitization, but the inbox bearer remains sensitive by nature. WAF can reduce incoming attack traffic but does not remove the need for robust frontend XSS protection.
 
 ---
 

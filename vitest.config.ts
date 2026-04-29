@@ -22,7 +22,10 @@ export default defineConfig(async () => {
     miniflare: {
       compatibilityFlags: VITEST_POOL_COMPATIBILITY_FLAGS,
       bindings: {
-        ADMIN_PASSWORD: "AdminPassword123!#",
+        TESSERA_OIDC_ISSUER: "http://127.0.0.1:6174",
+        TESSERA_OIDC_CLIENT_ID: "local-flamemail",
+        TESSERA_OIDC_CLIENT_SECRET: "local-flamemail-secret-change-me",
+        TESSERA_OPERATOR_SUBS: "00000000-0000-4000-8000-000000000001",
         TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
         TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
         TEST_MIGRATIONS: migrations,

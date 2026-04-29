@@ -24,11 +24,6 @@ export const ErrorResponse = eg.object({
 });
 export type ErrorResponse = TypeFromCodec<typeof ErrorResponse>;
 
-export const TokenResponse = eg.object({
-  token: eg.string,
-});
-export type TokenResponse = TypeFromCodec<typeof TokenResponse>;
-
 export const WebSocketTicketResponse = eg.object({
   ticket: eg.string,
 });

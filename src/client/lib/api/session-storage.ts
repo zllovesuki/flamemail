@@ -5,7 +5,7 @@ import {
   type InboxSession as InboxSessionType,
   type InboxSessionSummary as InboxSessionSummaryType,
 } from "@/shared/contracts";
-import { ADMIN_BOOKMARK_SCOPE, ADMIN_TOKEN_KEY, INBOX_SESSIONS_KEY, INBOX_TOKEN_KEY_PREFIX } from "./shared";
+import { ADMIN_BOOKMARK_SCOPE, INBOX_SESSIONS_KEY, INBOX_TOKEN_KEY_PREFIX } from "./shared";
 import { clearStoredBookmark, getInboxBookmarkScope } from "./bookmarks";
 
 function getInboxTokenStorageKey(address: string) {
@@ -156,15 +156,9 @@ export function updateInboxSession(address: string, updates: Partial<InboxSessio
   return next;
 }
 
-export function getAdminToken() {
-  return sessionStorage.getItem(ADMIN_TOKEN_KEY);
-}
-
-export function setAdminToken(token: string) {
-  sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
-}
-
-export function clearAdminToken() {
-  sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+// Admin sessions are now backed by an httpOnly cookie minted at the
+// tessera OIDC callback. Bookmark cleanup runs from the logout handler
+// because the cookie itself is not visible to JS.
+export function clearAdminBookmark() {
   clearStoredBookmark(ADMIN_BOOKMARK_SCOPE);
 }

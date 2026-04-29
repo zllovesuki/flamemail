@@ -1,8 +1,7 @@
 import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb } from "@/worker/db";
-import { inboxes } from "@/worker/db/schema";
-import { apiRequest, resetWorkerState, seedDomain, seedInbox, seedSession } from "./helpers";
+import { apiRequest, resetWorkerState, seedAdminCookieSession, seedDomain, seedInbox, seedSession } from "./helpers";
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -159,6 +158,34 @@ describe("worker api /api/public/inboxes and /api/protected/inboxes", () => {
     });
   });
 
+  it("rejects bearer admin tokens on the user inbox class", async () => {
+    await seedDomain("mail.test");
+    const inbox = await seedInbox({
+      address: "reader@mail.test",
+    });
+    const token = await seedSession({ type: "admin", sub: "00000000-0000-4000-8000-000000000001" });
+
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
+      token,
+    });
+
+    expect(response.status).toBe(401);
+  });
+
+  it("rejects admin cookie alone on the user inbox class", async () => {
+    await seedDomain("mail.test");
+    const inbox = await seedInbox({
+      address: "reader@mail.test",
+    });
+    const { cookie } = await seedAdminCookieSession();
+
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
+      cookie,
+    });
+
+    expect(response.status).toBe(401);
+  });
+
   it("rejects invalid session tokens for inbox detail", async () => {
     await seedDomain("mail.test");
     const inbox = await seedInbox({
@@ -175,13 +202,11 @@ describe("worker api /api/public/inboxes and /api/protected/inboxes", () => {
     });
   });
 
-  it("returns 404 when the requested inbox does not exist", async () => {
-    const token = await seedSession({
-      type: "admin",
-    });
+  it("returns 404 when the admin-inspect inbox does not exist", async () => {
+    const { cookie } = await seedAdminCookieSession();
 
-    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent("missing@mail.test")}`, {
-      token,
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent("missing@mail.test")}?admin=1`, {
+      cookie,
     });
 
     expect(response.status).toBe(404);
@@ -212,12 +237,31 @@ describe("worker api /api/public/inboxes and /api/protected/inboxes", () => {
     });
   });
 
-  it("extends a temporary inbox for the owning user", async () => {
+  it("returns 410 for admin-inspect on an expired inbox", async () => {
     await seedDomain("mail.test");
     const inbox = await seedInbox({
       address: "reader@mail.test",
-      createdAt: new Date("2026-04-15T00:00:00.000Z"),
-      expiresAt: new Date("2026-04-16T00:00:00.000Z"),
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      expiresAt: new Date("2026-01-02T00:00:00.000Z"),
+    });
+    const { cookie } = await seedAdminCookieSession();
+
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}?admin=1`, {
+      cookie,
+    });
+
+    expect(response.status).toBe(410);
+  });
+
+  it("extends a temporary inbox for the owning user", async () => {
+    await seedDomain("mail.test");
+    const createdAt = new Date(Date.now() - 5 * 60 * 60 * 1000); // 5 hours ago
+    const initialExpiresAt = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000); // 24h after creation
+    const expectedExpiresAt = new Date(createdAt.getTime() + 72 * 60 * 60 * 1000); // 72h after creation
+    const inbox = await seedInbox({
+      address: "reader@mail.test",
+      createdAt,
+      expiresAt: initialExpiresAt,
     });
     const token = await seedSession({
       type: "user",
@@ -242,7 +286,7 @@ describe("worker api /api/public/inboxes and /api/protected/inboxes", () => {
 
     expect(payload).toEqual({
       address: inbox.fullAddress,
-      expiresAt: "2026-04-18T00:00:00.000Z",
+      expiresAt: expectedExpiresAt.toISOString(),
       ttlHours: 72,
     });
 
@@ -251,7 +295,7 @@ describe("worker api /api/public/inboxes and /api/protected/inboxes", () => {
       where: (table, { eq }) => eq(table.id, inbox.id),
     });
 
-    expect(storedInbox?.expiresAt?.toISOString()).toBe("2026-04-18T00:00:00.000Z");
+    expect(storedInbox?.expiresAt?.toISOString()).toBe(expectedExpiresAt.toISOString());
     expect(await env.SESSIONS.get(`token:${token}`)).not.toBeNull();
   });
 
@@ -260,17 +304,16 @@ describe("worker api /api/public/inboxes and /api/protected/inboxes", () => {
     const inbox = await seedInbox({
       address: "reader@mail.test",
     });
-    const token = await seedSession({
-      type: "admin",
-    });
+    const { cookie } = await seedAdminCookieSession();
 
-    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/extend`, {
-      method: "POST",
-      token,
-      body: {
-        ttlHours: 72,
+    const response = await apiRequest(
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/extend?admin=1`,
+      {
+        method: "POST",
+        cookie,
+        body: { ttlHours: 72 },
       },
-    });
+    );
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
@@ -309,6 +352,66 @@ describe("worker api /api/public/inboxes and /api/protected/inboxes", () => {
     });
   });
 
+  it("issues an admin-scoped websocket ticket via cookie + ?admin=1", async () => {
+    await seedDomain("mail.test");
+    const inbox = await seedInbox({
+      address: "reader@mail.test",
+    });
+    const { cookie } = await seedAdminCookieSession();
+
+    const response = await apiRequest(
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/ws-ticket?admin=1`,
+      {
+        method: "POST",
+        cookie,
+      },
+    );
+
+    expect(response.status).toBe(200);
+
+    const payload = (await response.json()) as { ticket: string };
+    await expect(env.SESSIONS.get(`ws-ticket:${payload.ticket}`, "json")).resolves.toEqual({
+      address: inbox.fullAddress,
+      session: { type: "admin", sub: "00000000-0000-4000-8000-000000000001" },
+    });
+  });
+
+  it("rejects cross-origin ws-ticket on admin-inspect", async () => {
+    await seedDomain("mail.test");
+    const inbox = await seedInbox({
+      address: "reader@mail.test",
+    });
+    const { cookie } = await seedAdminCookieSession();
+
+    const response = await apiRequest(
+      `/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}/ws-ticket?admin=1`,
+      {
+        method: "POST",
+        cookie,
+        origin: "https://attacker.example",
+      },
+    );
+
+    expect(response.status).toBe(403);
+  });
+
+  it("ignores the bearer token when ?admin=1 is set", async () => {
+    await seedDomain("mail.test");
+    const inbox = await seedInbox({
+      address: "reader@mail.test",
+    });
+    const userToken = await seedSession({
+      type: "user",
+      address: inbox.fullAddress,
+    });
+
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}?admin=1`, {
+      token: userToken,
+    });
+
+    expect(response.status).toBe(401);
+  });
+
   it("deletes a temporary inbox for the owning user", async () => {
     await seedDomain("mail.test");
     const inbox = await seedInbox({
@@ -335,24 +438,62 @@ describe("worker api /api/public/inboxes and /api/protected/inboxes", () => {
     expect(storedInbox).toBeUndefined();
   });
 
-  it("rejects delete for permanent inboxes", async () => {
+  it("rejects delete for permanent inboxes via admin-inspect", async () => {
     await seedDomain("mail.test");
     const inbox = await seedInbox({
       address: "admin@mail.test",
       isPermanent: true,
     });
-    const token = await seedSession({
-      type: "admin",
-    });
+    const { cookie } = await seedAdminCookieSession();
 
-    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}?admin=1`, {
       method: "DELETE",
-      token,
+      cookie,
     });
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
       error: "Permanent inboxes cannot be deleted",
     });
+  });
+
+  it("admin-inspect can delete a temporary inbox", async () => {
+    await seedDomain("mail.test");
+    const inbox = await seedInbox({
+      address: "reader@mail.test",
+    });
+    const { cookie } = await seedAdminCookieSession();
+
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}?admin=1`, {
+      method: "DELETE",
+      cookie,
+    });
+
+    expect(response.status).toBe(200);
+
+    const db = createDb(env.DB.withSession("first-primary"));
+    const stored = await db.query.inboxes.findFirst({
+      where: (table, { eq }) => eq(table.id, inbox.id),
+    });
+    expect(stored).toBeUndefined();
+  });
+
+  it("bearer wins on user inbox class even when cookie is also present", async () => {
+    await seedDomain("mail.test");
+    const inbox = await seedInbox({
+      address: "reader@mail.test",
+    });
+    const userToken = await seedSession({
+      type: "user",
+      address: inbox.fullAddress,
+    });
+    const { cookie } = await seedAdminCookieSession();
+
+    const response = await apiRequest(`/api/protected/inboxes/${encodeURIComponent(inbox.fullAddress)}`, {
+      token: userToken,
+      cookie,
+    });
+
+    expect(response.status).toBe(200);
   });
 });

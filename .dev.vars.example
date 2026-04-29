@@ -1,4 +1,7 @@
-ADMIN_PASSWORD=replace-with-a-unique-strong-password
+TESSERA_OIDC_ISSUER=http://localhost:5174
+TESSERA_OIDC_CLIENT_ID=local-flamemail
+TESSERA_OIDC_CLIENT_SECRET=local-flamemail-secret-change-me
+TESSERA_OPERATOR_SUBS=7980f89b-9969-48ac-a767-35695f305157
 # https://developers.cloudflare.com/turnstile/troubleshooting/testing/
 TURNSTILE_SITE_KEY=1x00000000000000000000AA
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA

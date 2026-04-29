@@ -8,13 +8,14 @@ import {
   getErrorMessage,
   removeInboxSession,
   updateInboxSession,
+  type AuthDescriptor,
   type InboxInfo,
   type TempMailboxTtlHours,
 } from "@/client/lib/api";
 
 interface SessionTarget {
   address: string;
-  token: string;
+  auth: AuthDescriptor;
 }
 
 interface UseInboxPageActionsOptions {
@@ -75,7 +76,7 @@ export function useInboxPageActions({
     }
 
     try {
-      await deleteInbox(address, session.token);
+      await deleteInbox(address, session.auth);
       removeInboxSession(address);
       onDeleted(address);
       toast.success("Inbox deleted");
@@ -93,7 +94,7 @@ export function useInboxPageActions({
     setExtendingTo(ttlHours);
 
     try {
-      const updated = await extendInbox(address, session.token, ttlHours);
+      const updated = await extendInbox(address, session.auth, ttlHours);
       updateInboxSession(address, {
         expiresAt: updated.expiresAt,
         ttlHours: updated.ttlHours,

@@ -2,6 +2,8 @@
 
 A serverless transactional-email testing service running entirely on Cloudflare's platform. Developers get catch-all test addresses, receive emails in real-time via WebSocket, and inspect them in a React WebUI. Inbound plus aliases like `localpart+tag@domain.com` route into the base inbox while preserving the exact delivered recipient on each email.
 
+> **Note (admin auth):** Sections that mention `ADMIN_PASSWORD`, the `POST /api/public/admin/login` Turnstile-gated password handler, and the password-policy validators describe the historical pre-tessera shape. Admin access is now delegated to tessera OIDC: `GET /api/public/admin/start` redirects to tessera, the callback validates the ID token's `sub` against `TESSERA_OPERATOR_SUBS`, and a `__Host-flamemail-admin` HttpOnly cookie carries the resulting KV-backed admin session. See `README.md`, `AGENTS.md`, and `src/worker/api/admin-oidc.ts` for current behavior.
+
 ---
 
 ## Table of Contents

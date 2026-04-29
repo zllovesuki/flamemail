@@ -208,11 +208,15 @@ export async function seedEmail(options: SeedEmailOptions) {
 
 interface ApiRequestOptions {
   body?: unknown;
+  cookie?: string;
   envOverrides?: Partial<Env>;
   headers?: HeadersInit;
   method?: string;
+  origin?: string | null;
   token?: string;
 }
+
+const DEFAULT_BASE_URL = "https://flamemail.devbin.tools";
 
 export function apiRequest(path: string, options: ApiRequestOptions = {}) {
   const headers = new Headers(options.headers);
@@ -221,13 +225,25 @@ export function apiRequest(path: string, options: ApiRequestOptions = {}) {
     headers.set("authorization", `Bearer ${options.token}`);
   }
 
+  if (options.cookie) {
+    headers.set("cookie", options.cookie);
+  }
+
+  if (options.origin === null) {
+    headers.delete("origin");
+  } else if (options.origin !== undefined) {
+    headers.set("origin", options.origin);
+  } else if (!headers.has("origin")) {
+    headers.set("origin", DEFAULT_BASE_URL);
+  }
+
   let body: BodyInit | undefined;
   if (options.body !== undefined) {
     headers.set("content-type", "application/json");
     body = JSON.stringify(options.body);
   }
 
-  const request = new Request(`https://flamemail.devbin.tools${path}`, {
+  const request = new Request(`${DEFAULT_BASE_URL}${path}`, {
     method: options.method ?? (body ? "POST" : "GET"),
     headers,
     body,
@@ -241,4 +257,15 @@ export function apiRequest(path: string, options: ApiRequestOptions = {}) {
     },
     createExecutionContext(),
   );
+}
+
+// Seed sub matches the operator allowlist baked into vitest.config.ts.
+export const ALLOWED_OPERATOR_SUB = "00000000-0000-4000-8000-000000000001";
+
+export async function seedAdminCookieSession(
+  options: { sub?: string } = {},
+): Promise<{ token: string; cookie: string; sub: string }> {
+  const sub = options.sub ?? ALLOWED_OPERATOR_SUB;
+  const token = await seedSession({ type: "admin", sub });
+  return { token, cookie: `__Host-flamemail-admin=${token}`, sub };
 }

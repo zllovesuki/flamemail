@@ -8,35 +8,45 @@ import {
 } from "@/shared/contracts";
 import { getInboxBookmarkScope } from "./bookmarks";
 import { encodeJsonBody, request } from "./http";
+import type { AuthDescriptor } from "./shared";
 
-export async function getInbox(address: string, token: string) {
-  return request(`/api/protected/inboxes/${encodeURIComponent(address)}`, InboxInfo, {
-    token,
+function buildInboxPath(address: string, suffix: string, auth: AuthDescriptor) {
+  const base = `/api/protected/inboxes/${encodeURIComponent(address)}${suffix}`;
+  return auth.mode === "admin" ? `${base}${suffix.includes("?") ? "&" : "?"}admin=1` : base;
+}
+
+function bearerToken(auth: AuthDescriptor) {
+  return auth.mode === "user" ? auth.token : undefined;
+}
+
+export async function getInbox(address: string, auth: AuthDescriptor) {
+  return request(buildInboxPath(address, "", auth), InboxInfo, {
+    token: bearerToken(auth),
     bookmarkScope: getInboxBookmarkScope(address),
   });
 }
 
-export async function deleteInbox(address: string, token: string) {
-  return request(`/api/protected/inboxes/${encodeURIComponent(address)}`, OkResponse, {
+export async function deleteInbox(address: string, auth: AuthDescriptor) {
+  return request(buildInboxPath(address, "", auth), OkResponse, {
     method: "DELETE",
-    token,
+    token: bearerToken(auth),
     bookmarkScope: getInboxBookmarkScope(address),
   });
 }
 
-export async function extendInbox(address: string, token: string, ttlHours: TempMailboxTtlHours) {
-  return request(`/api/protected/inboxes/${encodeURIComponent(address)}/extend`, ExtendInboxResponse, {
+export async function extendInbox(address: string, auth: AuthDescriptor, ttlHours: TempMailboxTtlHours) {
+  return request(buildInboxPath(address, "/extend", auth), ExtendInboxResponse, {
     method: "POST",
-    token,
+    token: bearerToken(auth),
     bookmarkScope: getInboxBookmarkScope(address),
     body: encodeJsonBody(ExtendInboxRequest, { ttlHours }),
   });
 }
 
-export async function createWebSocketTicket(address: string, token: string) {
-  return request(`/api/protected/inboxes/${encodeURIComponent(address)}/ws-ticket`, WebSocketTicketResponse, {
+export async function createWebSocketTicket(address: string, auth: AuthDescriptor) {
+  return request(buildInboxPath(address, "/ws-ticket", auth), WebSocketTicketResponse, {
     method: "POST",
-    token,
+    token: bearerToken(auth),
     bookmarkScope: getInboxBookmarkScope(address),
   });
 }

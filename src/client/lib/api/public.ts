@@ -1,10 +1,9 @@
 import {
-  AdminLoginRequest,
   CreateInboxRequest,
   CreateInboxResponse,
   DomainsResponse,
+  OkResponse,
   PublicConfigResponse,
-  TokenResponse,
   type TempMailboxTtlHours,
 } from "@/shared/contracts";
 import { getInboxBookmarkScope, setStoredBookmark } from "./bookmarks";
@@ -45,9 +44,12 @@ export async function createInbox(domain: string, ttlHours: TempMailboxTtlHours,
   return response;
 }
 
-export async function adminLogin(password: string, turnstileToken: string) {
-  return request("/api/public/admin/login", TokenResponse, {
+export function adminSignInUrl(): string {
+  return "/api/public/admin/start";
+}
+
+export async function adminLogout() {
+  return request("/api/public/admin/logout", OkResponse, {
     method: "POST",
-    body: encodeJsonBody(AdminLoginRequest, { password, turnstileToken }),
   });
 }

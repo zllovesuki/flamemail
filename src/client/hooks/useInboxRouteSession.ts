@@ -1,14 +1,11 @@
 import { useMemo } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { getAdminToken, getInboxSession } from "@/client/lib/api";
+import { getInboxSession, type AuthDescriptor } from "@/client/lib/api";
 
 interface InboxRouteSession {
   address: string;
   adminMode: boolean;
-  session: {
-    address: string;
-    token: string;
-  } | null;
+  auth: AuthDescriptor | null;
 }
 
 export function useInboxRouteSession(): InboxRouteSession {
@@ -16,14 +13,28 @@ export function useInboxRouteSession(): InboxRouteSession {
   const [searchParams] = useSearchParams();
 
   const address = useMemo(() => decodeURIComponent(params.address ?? ""), [params.address]);
-  const userSession = address ? getInboxSession(address) : null;
-  const adminToken = getAdminToken();
-  const adminMode = searchParams.get("admin") === "1" || (!userSession && Boolean(adminToken));
-  const token = adminMode ? adminToken : (userSession?.token ?? null);
+  // Admin inspection is selected by explicit `?admin=1` only. The cookie
+  // backing the admin session is httpOnly so the client cannot detect it
+  // locally; admin pages link to inbox routes with `?admin=1` already, so
+  // the only way to land in admin mode is through that explicit hint.
+  const adminMode = searchParams.get("admin") === "1";
+
+  if (!address) {
+    return { address, adminMode, auth: null };
+  }
+
+  if (adminMode) {
+    return { address, adminMode, auth: { mode: "admin" } };
+  }
+
+  const userSession = getInboxSession(address);
+  if (!userSession) {
+    return { address, adminMode, auth: null };
+  }
 
   return {
     address,
     adminMode,
-    session: token && address ? { address, token } : null,
+    auth: { mode: "user", token: userSession.token },
   };
 }

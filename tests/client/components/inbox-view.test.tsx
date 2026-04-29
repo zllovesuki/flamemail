@@ -55,11 +55,11 @@ vi.mock("@/client/hooks/useWebSocket", () => ({
   useWebSocket: useWebSocketMock,
 }));
 
-vi.mock("@/client/components/inbox/MissingInboxSessionState", () => ({
+vi.mock("@/client/components/inbox/missing-inbox-session-state", () => ({
   MissingInboxSessionState: () => <div>Missing inbox session</div>,
 }));
 
-vi.mock("@/client/components/inbox/InboxHeader", () => ({
+vi.mock("@/client/components/inbox/inbox-header", () => ({
   InboxHeader: ({
     onCopy,
     onDeleteInbox,
@@ -83,11 +83,11 @@ vi.mock("@/client/components/inbox/InboxHeader", () => ({
   ),
 }));
 
-vi.mock("@/client/components/EmailList", () => ({
+vi.mock("@/client/components/email-list", () => ({
   EmailList: () => <div>Email list</div>,
 }));
 
-vi.mock("@/client/components/EmailDetail", () => ({
+vi.mock("@/client/components/email-detail", () => ({
   EmailDetail: () => <div>Email detail</div>,
 }));
 
@@ -123,10 +123,7 @@ describe("InboxView", () => {
     useInboxRouteSessionMock.mockReturnValue({
       address: "reader@mail.test",
       adminMode: false,
-      session: {
-        address: "reader@mail.test",
-        token: "tok_user",
-      },
+      auth: { mode: "user", token: "tok_user" },
     });
     useInboxMock.mockReturnValue({
       inbox: makeInbox(),
@@ -159,7 +156,7 @@ describe("InboxView", () => {
     useInboxRouteSessionMock.mockReturnValue({
       address: "reader@mail.test",
       adminMode: false,
-      session: null,
+      auth: null,
     });
 
     render(<InboxView onDeleted={vi.fn()} />);
@@ -182,7 +179,7 @@ describe("InboxView", () => {
       selectEmail: selectEmailMock,
       session: {
         address: "reader@mail.test",
-        token: "tok_user",
+        auth: { mode: "user", token: "tok_user" },
       },
     });
 

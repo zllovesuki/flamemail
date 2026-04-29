@@ -1,16 +1,10 @@
 import { eg, type TypeFromCodec } from "@cloudflare/util-en-garde";
-import { NullableString, TurnstileToken } from "./common";
+import { NullableString } from "./common";
 import { TempMailboxTtlHours } from "./inboxes";
 
 export const ADMIN_TEMP_INBOX_PAGE_SIZE = 10;
 
 const NullableTempMailboxTtlHours = eg.union([TempMailboxTtlHours, eg.null]);
-
-export const AdminLoginRequest = eg.object({
-  password: eg.string,
-  turnstileToken: TurnstileToken,
-});
-export type AdminLoginRequest = TypeFromCodec<typeof AdminLoginRequest>;
 
 export const AdminDomainRequest = eg.object({
   domain: eg.string,

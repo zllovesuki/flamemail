@@ -1,144 +1,162 @@
-import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Loader2, LogOut, Shield } from "lucide-react";
-import { TurnstileWidget } from "@/client/components/turnstile-widget";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ExternalLink, Loader2, LogOut, Shield } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { DomainManager } from "@/client/components/admin/domain-manager";
 import { PermanentInboxList } from "@/client/components/admin/permanent-inbox-list";
 import { TempInboxList } from "@/client/components/admin/temp-inbox-list";
 import { toast } from "@/client/components/toast";
-import { Button, Card, ErrorBanner } from "@/client/components/ui";
-import { useAdminSessionGuard } from "@/client/hooks/useAdminSessionGuard";
-import { useTurnstileForm } from "@/client/hooks/useTurnstileForm";
+import { Button, Card, ErrorBanner, buttonClasses } from "@/client/components/ui";
 import {
-  adminLogin,
-  clearAdminToken,
-  getAdminToken,
+  ApiError,
+  adminLogout,
+  adminSignInUrl,
+  clearAdminBookmark,
   getErrorMessage,
   isAdminAccessDisabledError,
-  isTurnstileError,
   listAdminDomains,
   listAdminInboxes,
-  setAdminToken,
   type AdminDomain,
   type AdminInbox,
 } from "@/client/lib/api";
 
+const ERROR_COPY: Record<string, string> = {
+  ADMIN_ACCESS_DISABLED: "Admin access is unavailable because tessera OIDC is not configured or cannot be discovered.",
+  invalid_request: "Sign-in request was missing required parameters.",
+  invalid_state: "Sign-in handshake state was invalid or expired. Try signing in again.",
+  missing_state: "Sign-in handshake cookie was missing. Try signing in again.",
+  token_exchange_failed: "tessera rejected the authorization code. Try signing in again.",
+  invalid_id_token: "tessera returned an unexpected ID token. Try signing in again.",
+  not_operator: "This tessera account is not authorized for admin access.",
+  session_create_failed: "Could not create the admin session. Try signing in again.",
+};
+
+function describeError(code: string | null) {
+  if (!code) {
+    return null;
+  }
+  return ERROR_COPY[code] ?? "Sign-in failed. Try again.";
+}
+
 export function AdminLogin() {
-  const [password, setPassword] = useState("");
-  const [token, setToken] = useState<string | null>(() => getAdminToken());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialError = describeError(searchParams.get("error"));
+  const initialErrorRef = useRef(initialError);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [bootLoading, setBootLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [accessDisabled, setAccessDisabled] = useState(false);
+  const [error, setError] = useState<string | null>(initialError);
   const [domains, setDomains] = useState<AdminDomain[]>([]);
   const [inboxes, setInboxes] = useState<AdminInbox[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { turnstileToken, setTurnstileToken, turnstileResetKey, handleTurnstileError, resetTurnstile } =
-    useTurnstileForm({
-      onTurnstileError: () => {
-        setError(null);
-      },
-    });
 
-  const resetAdminState = useCallback((message?: string) => {
-    clearAdminToken();
-    setToken(null);
-    setDomains([]);
-    setInboxes([]);
-    setError(null);
-
-    if (message) {
-      toast.error(message);
-    }
-  }, []);
-  const handleAdminSessionError = useAdminSessionGuard(resetAdminState);
-
-  const reload = useCallback(async (currentToken: string) => {
-    const nextDomains = await listAdminDomains(currentToken);
-    const nextInboxes = await listAdminInboxes(currentToken);
-
+  const reload = useCallback(async () => {
+    const [nextDomains, nextInboxes] = await Promise.all([listAdminDomains(), listAdminInboxes()]);
     setDomains(nextDomains);
     setInboxes(nextInboxes);
   }, []);
 
-  useEffect(() => {
-    if (!token) {
-      setDomains([]);
-      setInboxes([]);
-      return;
-    }
+  const reset = useCallback((message?: string) => {
+    clearAdminBookmark();
+    setAuthenticated(false);
+    setDomains([]);
+    setInboxes([]);
+    setError(message ?? null);
+  }, []);
 
+  useEffect(() => {
     let active = true;
 
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-
+    const boot = async () => {
       try {
-        await reload(token);
+        await reload();
+        if (!active) return;
+        setAuthenticated(true);
+        setError(null);
       } catch (nextError) {
-        if (!active) {
+        if (!active) return;
+        if (isAdminAccessDisabledError(nextError)) {
+          setAccessDisabled(true);
+          reset(getErrorMessage(nextError));
           return;
         }
-
-        if (handleAdminSessionError(nextError, setError)) {
+        if (nextError instanceof ApiError && (nextError.status === 401 || nextError.status === 403)) {
+          // Cookie missing or rejected; keep the existing error from
+          // ?error= if present, otherwise stay quiet.
+          reset(initialErrorRef.current ?? undefined);
           return;
         }
+        reset(getErrorMessage(nextError));
       } finally {
         if (active) {
-          setLoading(false);
+          setBootLoading(false);
         }
       }
     };
 
-    void load();
-
+    void boot();
     return () => {
       active = false;
     };
-  }, [handleAdminSessionError, reload, token]);
+  }, [reload, reset]);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!turnstileToken) {
-      setError("Complete human verification to continue.");
+  // Drop ?error= from the URL once we have rendered it once so a refresh
+  // after a successful sign-in does not re-show the banner.
+  useEffect(() => {
+    if (!searchParams.get("error")) {
       return;
     }
+    const next = new URLSearchParams(searchParams);
+    next.delete("error");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
-    setLoading(true);
-    setError(null);
-
+  const handleReload = useCallback(async () => {
+    setRefreshing(true);
     try {
-      const response = await adminLogin(password, turnstileToken);
-      setAdminToken(response.token);
-      setToken(response.token);
-      setPassword("");
-      resetTurnstile();
-      toast.success("Admin session started");
+      await reload();
+      setError(null);
+      setAccessDisabled(false);
     } catch (nextError) {
       if (isAdminAccessDisabledError(nextError)) {
-        resetAdminState(getErrorMessage(nextError));
-      } else {
-        toast.error(getErrorMessage(nextError));
+        setAccessDisabled(true);
+        reset(getErrorMessage(nextError));
+        throw nextError;
       }
-      if (isTurnstileError(nextError)) {
-        resetTurnstile();
+      if (nextError instanceof ApiError && (nextError.status === 401 || nextError.status === 403)) {
+        reset();
+        throw nextError;
       }
+      setError(getErrorMessage(nextError));
+      throw nextError;
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [reload, reset]);
 
-  const handleLogout = () => {
-    resetAdminState();
-    toast.info("Admin session cleared");
-  };
-
-  const handleReload = async () => {
-    if (token) {
-      await reload(token);
+  const handleLogout = useCallback(async () => {
+    try {
+      await adminLogout();
+      reset();
+      toast.info("Admin session cleared");
+    } catch (nextError) {
+      toast.error(getErrorMessage(nextError));
     }
-  };
+  }, [reset]);
+
+  if (bootLoading) {
+    return (
+      <main className="animate-slide-up space-y-6">
+        <Card className="flex items-center gap-2 text-sm text-zinc-400">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading admin console...
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="animate-slide-up space-y-6">
-      {token ? (
+      {authenticated ? (
         <Card className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="inline-grid h-9 w-9 place-items-center rounded-lg bg-accent-500/10">
@@ -148,11 +166,11 @@ export function AdminLogin() {
               <h1 className="text-base font-semibold text-zinc-100">Admin console</h1>
               <span className="flex items-center gap-1.5 text-xs text-zinc-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Authenticated
+                Authenticated via tessera
               </span>
             </div>
           </div>
-          <Button icon={<LogOut className="h-3.5 w-3.5" />} onClick={handleLogout}>
+          <Button icon={<LogOut className="h-3.5 w-3.5" />} onClick={() => void handleLogout()}>
             Sign out
           </Button>
         </Card>
@@ -164,62 +182,40 @@ export function AdminLogin() {
           </div>
           <h1 className="text-xl font-semibold tracking-tight text-zinc-100">Admin console</h1>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-            Sign in with the admin password to manage domains, inspect temporary inboxes, and browse permanent inboxes.
+            Sign in with tessera to manage domains, inspect temporary inboxes, and browse permanent inboxes.
           </p>
           <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-            Admin access is limited to this browser session and is cleared when you close the tab or sign out.
+            Admin access is limited to operators allowlisted in tessera.
           </p>
 
-          <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-            <label className="block space-y-1.5">
-              <span className="flex items-center gap-1.5 text-sm font-medium text-zinc-400">
-                <KeyRound className="h-3.5 w-3.5" />
-                Admin password
-              </span>
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Enter ADMIN_PASSWORD"
-                className="w-full rounded-lg border border-zinc-700/60 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30"
-              />
-            </label>
-
-            <TurnstileWidget
-              action="admin_login"
-              onError={handleTurnstileError}
-              onTokenChange={setTurnstileToken}
-              resetKey={turnstileResetKey}
-            />
-
+          {accessDisabled ? (
             <Button
               variant="primary"
               size="md"
-              type="submit"
-              loading={loading}
-              disabled={password.length === 0 || !turnstileToken}
+              disabled
+              icon={<ExternalLink className="h-3.5 w-3.5" />}
+              className="mt-5"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              Sign in with tessera
             </Button>
-          </form>
+          ) : (
+            <a href={adminSignInUrl()} className={buttonClasses({ variant: "primary", size: "md", className: "mt-5" })}>
+              <ExternalLink className="h-3.5 w-3.5" />
+              Sign in with tessera
+            </a>
+          )}
 
           {error ? <ErrorBanner className="mt-4">{error}</ErrorBanner> : null}
         </Card>
       )}
 
-      {token ? (
+      {authenticated ? (
         <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
           <div className="space-y-6">
-            <DomainManager
-              token={token}
-              domains={domains}
-              loading={loading}
-              onAdminSessionError={resetAdminState}
-              onReload={handleReload}
-            />
-            <TempInboxList token={token} onSessionError={resetAdminState} />
+            <DomainManager domains={domains} loading={refreshing} onAdminSessionError={reset} onReload={handleReload} />
+            <TempInboxList onSessionError={reset} />
           </div>
-          <PermanentInboxList inboxes={inboxes} loading={loading} />
+          <PermanentInboxList inboxes={inboxes} loading={refreshing} />
         </section>
       ) : null}
     </main>
