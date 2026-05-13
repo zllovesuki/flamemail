@@ -3,6 +3,7 @@ import type { SessionRecord } from "@/shared/contracts";
 import worker from "@/worker/index";
 import { createDb } from "@/worker/db";
 import { attachments, domains, emails, inboxes } from "@/worker/db/schema";
+import { ADMIN_COOKIE_HEADER_NAME } from "@/worker/services/cookies";
 import { storeAttachment, storeEmailBody, storeRawEmail } from "@/worker/services/storage";
 
 const encoder = new TextEncoder();
@@ -267,5 +268,5 @@ export async function seedAdminCookieSession(
 ): Promise<{ token: string; cookie: string; sub: string }> {
   const sub = options.sub ?? ALLOWED_OPERATOR_SUB;
   const token = await seedSession({ type: "admin", sub });
-  return { token, cookie: `__Host-flamemail-admin=${token}`, sub };
+  return { token, cookie: `${ADMIN_COOKIE_HEADER_NAME}=${token}`, sub };
 }

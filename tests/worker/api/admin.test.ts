@@ -1,6 +1,7 @@
 import { env } from "cloudflare:test";
 import { OIDCMockProvider } from "@mongodb-js/oidc-mock-provider";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ADMIN_COOKIE_HEADER_NAME, OIDC_TRANSACTION_COOKIE_HEADER_NAME } from "@/worker/services/cookies";
 import { clearOidcCachesForTesting } from "@/worker/services/oidc";
 import { apiRequest, resetWorkerState, seedAdminCookieSession, seedDomain } from "./helpers";
 
@@ -192,7 +193,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
     expect(url.searchParams.get("nonce")).toBeTruthy();
 
     const cookies = parseSetCookie(response);
-    const txn = cookies.get("__Host-flamemail-oidc");
+    const txn = cookies.get(OIDC_TRANSACTION_COOKIE_HEADER_NAME);
     expect(txn).toBeDefined();
     expect(txn?.attributes.get("httponly")).toBe(true);
     expect(txn?.attributes.get("secure")).toBe(true);
@@ -234,7 +235,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
   it("completes the callback, mints an admin session, and sets __Host-flamemail-admin", async () => {
     const startResponse = await apiRequest("/api/public/admin/start", { method: "GET" });
-    const txnCookie = parseSetCookie(startResponse).get("__Host-flamemail-oidc")?.value;
+    const txnCookie = parseSetCookie(startResponse).get(OIDC_TRANSACTION_COOKIE_HEADER_NAME)?.value;
     const startUrl = new URL(startResponse.headers.get("location") ?? "");
     const state = startUrl.searchParams.get("state") ?? "";
     const nonce = startUrl.searchParams.get("nonce") ?? "";
@@ -244,7 +245,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
     const callback = await apiRequest(`/api/public/admin/callback?code=test-code&state=${encodeURIComponent(state)}`, {
       method: "GET",
-      cookie: `__Host-flamemail-oidc=${txnCookie}`,
+      cookie: `${OIDC_TRANSACTION_COOKIE_HEADER_NAME}=${txnCookie}`,
     });
 
     expect(callback.status).toBe(302);
@@ -252,13 +253,13 @@ describe("worker api /api/public/admin (OIDC)", () => {
     expect(fetchMock).toHaveBeenCalledWith(TOKEN_ENDPOINT, expect.objectContaining({ method: "POST" }));
 
     const callbackCookies = parseSetCookie(callback);
-    const adminCookie = callbackCookies.get("__Host-flamemail-admin");
+    const adminCookie = callbackCookies.get(ADMIN_COOKIE_HEADER_NAME);
     expect(adminCookie).toBeDefined();
     expect(adminCookie?.value).toMatch(/^tok_/);
     expect(adminCookie?.attributes.get("httponly")).toBe(true);
     expect(adminCookie?.attributes.get("secure")).toBe(true);
 
-    const txnExpired = callbackCookies.get("__Host-flamemail-oidc");
+    const txnExpired = callbackCookies.get(OIDC_TRANSACTION_COOKIE_HEADER_NAME);
     expect(txnExpired).toBeDefined();
     expect(txnExpired?.attributes.get("max-age")).toBe("0");
 
@@ -268,7 +269,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
   it("redirects /admin/callback with not_operator when sub is not on the allowlist", async () => {
     const startResponse = await apiRequest("/api/public/admin/start", { method: "GET" });
-    const txnCookie = parseSetCookie(startResponse).get("__Host-flamemail-oidc")?.value;
+    const txnCookie = parseSetCookie(startResponse).get(OIDC_TRANSACTION_COOKIE_HEADER_NAME)?.value;
     const startUrl = new URL(startResponse.headers.get("location") ?? "");
     const state = startUrl.searchParams.get("state") ?? "";
     const nonce = startUrl.searchParams.get("nonce") ?? "";
@@ -278,7 +279,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
     const callback = await apiRequest(`/api/public/admin/callback?code=test-code&state=${encodeURIComponent(state)}`, {
       method: "GET",
-      cookie: `__Host-flamemail-oidc=${txnCookie}`,
+      cookie: `${OIDC_TRANSACTION_COOKIE_HEADER_NAME}=${txnCookie}`,
     });
 
     expect(callback.status).toBe(302);
@@ -287,7 +288,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
   it("redirects /admin/callback with invalid_id_token when nonce mismatches", async () => {
     const startResponse = await apiRequest("/api/public/admin/start", { method: "GET" });
-    const txnCookie = parseSetCookie(startResponse).get("__Host-flamemail-oidc")?.value;
+    const txnCookie = parseSetCookie(startResponse).get(OIDC_TRANSACTION_COOKIE_HEADER_NAME)?.value;
     const startUrl = new URL(startResponse.headers.get("location") ?? "");
     const state = startUrl.searchParams.get("state") ?? "";
 
@@ -299,7 +300,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
     const callback = await apiRequest(`/api/public/admin/callback?code=test-code&state=${encodeURIComponent(state)}`, {
       method: "GET",
-      cookie: `__Host-flamemail-oidc=${txnCookie}`,
+      cookie: `${OIDC_TRANSACTION_COOKIE_HEADER_NAME}=${txnCookie}`,
     });
 
     expect(callback.status).toBe(302);
@@ -308,11 +309,11 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
   it("redirects /admin/callback with invalid_state when state mismatches", async () => {
     const startResponse = await apiRequest("/api/public/admin/start", { method: "GET" });
-    const txnCookie = parseSetCookie(startResponse).get("__Host-flamemail-oidc")?.value;
+    const txnCookie = parseSetCookie(startResponse).get(OIDC_TRANSACTION_COOKIE_HEADER_NAME)?.value;
 
     const callback = await apiRequest(`/api/public/admin/callback?code=test-code&state=tampered`, {
       method: "GET",
-      cookie: `__Host-flamemail-oidc=${txnCookie}`,
+      cookie: `${OIDC_TRANSACTION_COOKIE_HEADER_NAME}=${txnCookie}`,
     });
 
     expect(callback.status).toBe(302);
@@ -328,9 +329,34 @@ describe("worker api /api/public/admin (OIDC)", () => {
     expect(callback.headers.get("location")).toBe("/admin?error=missing_state");
   });
 
+  it("redirects /admin/callback with invalid_state when transaction cookie signature is invalid", async () => {
+    const callback = await apiRequest(`/api/public/admin/callback?code=test-code&state=anything`, {
+      method: "GET",
+      cookie: `${OIDC_TRANSACTION_COOKIE_HEADER_NAME}=not-signed`,
+    });
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toBe("/admin?error=invalid_state");
+    const callbackCookies = parseSetCookie(callback);
+    expect(callbackCookies.get(OIDC_TRANSACTION_COOKIE_HEADER_NAME)?.attributes.get("max-age")).toBe("0");
+  });
+
+  it("clears the transaction cookie when OIDC config is missing during callback", async () => {
+    const callback = await apiRequest(`/api/public/admin/callback?code=test-code&state=anything`, {
+      method: "GET",
+      cookie: `${OIDC_TRANSACTION_COOKIE_HEADER_NAME}=stale`,
+      envOverrides: { TESSERA_OIDC_CLIENT_SECRET: "" },
+    });
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toBe("/admin?error=ADMIN_ACCESS_DISABLED");
+    const callbackCookies = parseSetCookie(callback);
+    expect(callbackCookies.get(OIDC_TRANSACTION_COOKIE_HEADER_NAME)?.attributes.get("max-age")).toBe("0");
+  });
+
   it("redirects /admin/callback with token_exchange_failed when tessera token endpoint returns non-OK", async () => {
     const startResponse = await apiRequest("/api/public/admin/start", { method: "GET" });
-    const txnCookie = parseSetCookie(startResponse).get("__Host-flamemail-oidc")?.value;
+    const txnCookie = parseSetCookie(startResponse).get(OIDC_TRANSACTION_COOKIE_HEADER_NAME)?.value;
     const startUrl = new URL(startResponse.headers.get("location") ?? "");
     const state = startUrl.searchParams.get("state") ?? "";
 
@@ -338,7 +364,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
     const callback = await apiRequest(`/api/public/admin/callback?code=test-code&state=${encodeURIComponent(state)}`, {
       method: "GET",
-      cookie: `__Host-flamemail-oidc=${txnCookie}`,
+      cookie: `${OIDC_TRANSACTION_COOKIE_HEADER_NAME}=${txnCookie}`,
     });
 
     expect(callback.status).toBe(302);
@@ -347,7 +373,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
   it("redirects /admin/callback with ADMIN_ACCESS_DISABLED when discovery fails before token exchange", async () => {
     const startResponse = await apiRequest("/api/public/admin/start", { method: "GET" });
-    const txnCookie = parseSetCookie(startResponse).get("__Host-flamemail-oidc")?.value;
+    const txnCookie = parseSetCookie(startResponse).get(OIDC_TRANSACTION_COOKIE_HEADER_NAME)?.value;
     const startUrl = new URL(startResponse.headers.get("location") ?? "");
     const state = startUrl.searchParams.get("state") ?? "";
 
@@ -356,7 +382,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
 
     const callback = await apiRequest(`/api/public/admin/callback?code=test-code&state=${encodeURIComponent(state)}`, {
       method: "GET",
-      cookie: `__Host-flamemail-oidc=${txnCookie}`,
+      cookie: `${OIDC_TRANSACTION_COOKIE_HEADER_NAME}=${txnCookie}`,
     });
 
     expect(callback.status).toBe(302);
@@ -364,7 +390,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
     expect(fetchMock).not.toHaveBeenCalledWith(TOKEN_ENDPOINT, expect.anything());
 
     const callbackCookies = parseSetCookie(callback);
-    expect(callbackCookies.get("__Host-flamemail-oidc")?.attributes.get("max-age")).toBe("0");
+    expect(callbackCookies.get(OIDC_TRANSACTION_COOKIE_HEADER_NAME)?.attributes.get("max-age")).toBe("0");
   });
 
   it("logout clears the admin cookie and KV record", async () => {
@@ -380,7 +406,7 @@ describe("worker api /api/public/admin (OIDC)", () => {
     await expect(response.json()).resolves.toEqual({ ok: true });
 
     const cookies = parseSetCookie(response);
-    expect(cookies.get("__Host-flamemail-admin")?.attributes.get("max-age")).toBe("0");
+    expect(cookies.get(ADMIN_COOKIE_HEADER_NAME)?.attributes.get("max-age")).toBe("0");
 
     expect(await env.SESSIONS.get(`token:${token}`)).toBeNull();
   });

@@ -1,18 +1,26 @@
-import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } from "hono/cookie";
 import type { CookieOptions } from "hono/utils/cookie";
 import type { AppContext } from "@/worker/types";
 
-export const ADMIN_COOKIE_NAME = "__Host-flamemail-admin";
-export const OIDC_TRANSACTION_COOKIE_NAME = "__Host-flamemail-oidc";
+export const AUTH_COOKIE_PREFIX = "host";
+export const ADMIN_COOKIE_NAME = "flamemail-admin";
+export const OIDC_TRANSACTION_COOKIE_NAME = "flamemail-oidc";
+export const ADMIN_COOKIE_HEADER_NAME = `__Host-${ADMIN_COOKIE_NAME}`;
+export const OIDC_TRANSACTION_COOKIE_HEADER_NAME = `__Host-${OIDC_TRANSACTION_COOKIE_NAME}`;
 
 const OIDC_TRANSACTION_MAX_AGE_SECONDS = 5 * 60;
 
 const SHARED_COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: true,
   sameSite: "Lax",
-  path: "/",
+  prefix: AUTH_COOKIE_PREFIX,
 } as const satisfies CookieOptions;
+
+export type SignedCookieReadResult =
+  | { kind: "ok"; value: string }
+  | { kind: "missing" }
+  | { kind: "invalid_signature" };
+export type CookieSigningSecret = BufferSource;
 
 export function setAdminCookie(c: AppContext, token: string, ttlSeconds: number) {
   setCookie(c, ADMIN_COOKIE_NAME, token, {
@@ -22,22 +30,39 @@ export function setAdminCookie(c: AppContext, token: string, ttlSeconds: number)
 }
 
 export function getAdminCookie(c: AppContext): string | undefined {
-  return getCookie(c, ADMIN_COOKIE_NAME);
+  return getCookie(c, ADMIN_COOKIE_NAME, AUTH_COOKIE_PREFIX);
 }
 
 export function clearAdminCookie(c: AppContext) {
   deleteCookie(c, ADMIN_COOKIE_NAME, SHARED_COOKIE_OPTIONS);
 }
 
-export function setOidcTransactionCookie(c: AppContext, sealed: string) {
-  setCookie(c, OIDC_TRANSACTION_COOKIE_NAME, sealed, {
+export async function setOidcTransactionCookie(
+  c: AppContext,
+  value: string,
+  secret: CookieSigningSecret,
+): Promise<void> {
+  await setSignedCookie(c, OIDC_TRANSACTION_COOKIE_NAME, value, secret, {
     ...SHARED_COOKIE_OPTIONS,
     maxAge: OIDC_TRANSACTION_MAX_AGE_SECONDS,
   });
 }
 
-export function getOidcTransactionCookie(c: AppContext): string | undefined {
-  return getCookie(c, OIDC_TRANSACTION_COOKIE_NAME);
+export async function getOidcTransactionCookie(
+  c: AppContext,
+  secret: CookieSigningSecret,
+): Promise<SignedCookieReadResult> {
+  const rawValue = getCookie(c, OIDC_TRANSACTION_COOKIE_NAME, AUTH_COOKIE_PREFIX);
+  if (rawValue === undefined) {
+    return { kind: "missing" };
+  }
+
+  const value = await getSignedCookie(c, secret, OIDC_TRANSACTION_COOKIE_NAME, AUTH_COOKIE_PREFIX);
+  if (value === undefined || value === false) {
+    return { kind: "invalid_signature" };
+  }
+
+  return { kind: "ok", value };
 }
 
 export function clearOidcTransactionCookie(c: AppContext) {

@@ -14,14 +14,15 @@ import {
 import {
   buildAuthorizeUrl,
   buildCallbackUrl,
+  decodeTransactionPayload,
+  deriveTransactionCookieSecret,
   discoverOidcProvider,
+  encodeTransactionPayload,
   exchangeAuthorizationCode,
   generateNonce,
   generatePkcePair,
   generateState,
   loadOidcConfig,
-  sealTransaction,
-  unsealTransaction,
   verifyIdTokenClaims,
 } from "@/worker/services/oidc";
 import { ADMIN_SESSION_TTL_MS, createSessionToken, revokeAdminSessionToken } from "@/worker/services/inbox";
@@ -65,21 +66,21 @@ export function registerAdminOidcRoutes(app: Hono<AppBindings>) {
     const pkce = await generatePkcePair();
     const redirectUri = buildCallbackUrl(c.req.url);
 
-    let sealed: string;
+    const encodedTransaction = encodeTransactionPayload({
+      state,
+      nonce,
+      codeVerifier: pkce.verifier,
+      redirectUri,
+      createdAt: Date.now(),
+    });
+
     try {
-      sealed = await sealTransaction(config.clientSecret, {
-        state,
-        nonce,
-        codeVerifier: pkce.verifier,
-        redirectUri,
-        createdAt: Date.now(),
-      });
+      const transactionCookieSecret = await deriveTransactionCookieSecret(config.clientSecret);
+      await setOidcTransactionCookie(c, encodedTransaction, transactionCookieSecret);
     } catch (error) {
-      logger.error("oidc_start_seal_failed", "Could not seal OIDC transaction cookie", errorContext(error));
+      logger.error("oidc_start_cookie_sign_failed", "Could not sign OIDC transaction cookie", errorContext(error));
       return adminUnavailableRedirect(c);
     }
-
-    setOidcTransactionCookie(c, sealed);
 
     const authorizeUrl = buildAuthorizeUrl(providerResult.provider, {
       redirectUri,
@@ -97,6 +98,7 @@ export function registerAdminOidcRoutes(app: Hono<AppBindings>) {
       logger.warn("oidc_callback_disabled", "OIDC callback blocked because tessera config is incomplete", {
         reason: result.reason,
       });
+      clearOidcTransactionCookie(c);
       return adminUnavailableRedirect(c);
     }
 
@@ -108,26 +110,43 @@ export function registerAdminOidcRoutes(app: Hono<AppBindings>) {
       return callbackErrorRedirect(c, "invalid_request");
     }
 
-    const sealed = getOidcTransactionCookie(c);
-    if (!sealed) {
+    let transactionCookieSecret: Uint8Array<ArrayBuffer>;
+    try {
+      transactionCookieSecret = await deriveTransactionCookieSecret(config.clientSecret);
+    } catch (error) {
+      logger.error(
+        "oidc_callback_cookie_secret_derive_failed",
+        "Could not derive OIDC transaction cookie signing secret",
+        errorContext(error),
+      );
+      clearOidcTransactionCookie(c);
+      return adminUnavailableRedirect(c);
+    }
+
+    const transactionCookie = await getOidcTransactionCookie(c, transactionCookieSecret);
+    if (transactionCookie.kind === "missing") {
       logger.warn("oidc_callback_missing_cookie", "Rejected callback with missing transaction cookie");
       return callbackErrorRedirect(c, "missing_state");
     }
+    if (transactionCookie.kind === "invalid_signature") {
+      logger.warn("oidc_callback_cookie_signature_failed", "Rejected callback with bad transaction cookie signature");
+      return callbackErrorRedirect(c, "invalid_state");
+    }
 
-    const unsealed = await unsealTransaction(config.clientSecret, sealed);
-    if (!unsealed.ok) {
-      logger.warn("oidc_callback_unseal_failed", "Rejected callback with bad transaction cookie", {
-        reason: unsealed.reason,
+    const transaction = decodeTransactionPayload(transactionCookie.value);
+    if (!transaction.ok) {
+      logger.warn("oidc_callback_transaction_invalid", "Rejected callback with bad transaction cookie payload", {
+        reason: transaction.reason,
       });
       return callbackErrorRedirect(c, "invalid_state");
     }
 
-    if (unsealed.payload.state !== state) {
+    if (transaction.payload.state !== state) {
       logger.warn("oidc_callback_state_mismatch", "Rejected callback with mismatched state");
       return callbackErrorRedirect(c, "invalid_state");
     }
 
-    if (unsealed.payload.redirectUri !== buildCallbackUrl(c.req.url)) {
+    if (transaction.payload.redirectUri !== buildCallbackUrl(c.req.url)) {
       logger.warn("oidc_callback_redirect_uri_mismatch", "Rejected callback with mismatched redirect_uri");
       return callbackErrorRedirect(c, "invalid_state");
     }
@@ -143,8 +162,8 @@ export function registerAdminOidcRoutes(app: Hono<AppBindings>) {
 
     const tokenResult = await exchangeAuthorizationCode(providerResult.provider, {
       callbackUrl: c.req.url,
-      codeVerifier: unsealed.payload.codeVerifier,
-      nonce: unsealed.payload.nonce,
+      codeVerifier: transaction.payload.codeVerifier,
+      nonce: transaction.payload.nonce,
       state,
     });
     if (!tokenResult.ok) {
